@@ -1,3 +1,5 @@
+package org.rurik
+
 object Exercise2_2 {
 
   def isSorted[A](arr: Array[A], ordered: (A, A) => Boolean): Boolean = {

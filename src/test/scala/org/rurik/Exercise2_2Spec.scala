@@ -1,6 +1,7 @@
+package org.rurik
 
-import Exercise2_2.isSorted
-import org.scalatest._
+
+import org.rurik.Exercise2_2.isSorted
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
 
