@@ -108,6 +108,75 @@ object Exercise3_1 extends App {
     def lengthFL[A](as: List[A]): Int =
       foldLeft[A, Int](as, 0)((b, _) => 1 + b)
 
+    def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A])((list: List[A], a: A) => Cons(a, list))
+
+    def append[A](l: List[A], r: List[A]): List[A] =
+      foldRight(l, r)((a, list) => Cons(a, list))
+
+    def concat[A](ll: List[List[A]]): List[A] = foldLeft(ll, List[A]())(
+      (accList, list) => append(accList, list)
+    )
+
+    def add1(l: List[Int]): List[Int] =
+      foldLeft(reverse(l), Nil: List[Int]) {
+        (list, i) => Cons(i + 1, list)
+      }
+
+    def doubleToString(l: List[Double]): List[String] = {
+      foldLeft(reverse(l), Nil: List[String]) {
+        (list, d) => Cons(d.toString, list)
+      }
+    }
+
+    def map[A, B](l: List[A])(f: A => B): List[B] = {
+      foldLeft(reverse(l), Nil: List[B]) {
+        (list, a) => Cons(f(a), list)
+      }
+    }
+
+    def filter[A](l: List[A])(f: A => Boolean): List[A] = foldLeft(reverse(l), List[A]()) {
+      (l, a) => {
+        if (f(a)) Cons(a, l) else l
+      }
+    }
+
+    def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] = {
+      foldLeft(reverse(l), Nil: List[B]) {
+        (list, a) => append(f(a), list)
+      }
+    }
+
+    def filterFM[A](l: List[A])(f: A => Boolean): List[A] = flatMap(l) {
+      a => if (f(a)) List(a) else List()
+    }
+
+    def sumLists(l1: List[Int], l2: List[Int]): List[Int] = (l1, l2) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(x, xs), Cons(y, ys)) => Cons(x + y, sumLists(xs, ys))
+    }
+
+
+    def zipWith[A](l1: List[A], l2: List[A])(f: (A, A) => A): List[A] = (l1, l2) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(x, xs), Cons(y, ys)) => Cons(f(x, y), zipWith(xs, ys)(f))
+    }
+
+    def hasSubsequence[A](l: List[A], originSub: List[A]): Boolean = {
+      @annotation.tailrec
+      def go(l: List[A], curSub: List[A]): Boolean =
+        (l, curSub) match {
+          case (Nil, Nil) => true
+          case (Nil, _) => false
+          case (_, Nil) => true
+          case (Cons(x, xs), Cons(y, ys)) =>
+            if (x == y) go(xs, ys) else go(xs, originSub)
+        }
+
+      go(l, originSub)
+    }
+
 
   }
 
