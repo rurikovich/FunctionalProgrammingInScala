@@ -1,9 +1,8 @@
 package org.rurik
 
-import org.rurik.Exercise3_1.List._
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
-import org.rurik.Exercise3_1.{List, _}
+import org.rurik.List._
 
 class Exercise3_1Spec extends AnyFlatSpec with should.Matchers {
 
