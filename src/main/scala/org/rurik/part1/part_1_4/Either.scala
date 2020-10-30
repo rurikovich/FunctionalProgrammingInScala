@@ -18,8 +18,8 @@ sealed trait Either[+E, +A] {
 
   def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] =
     (this, b) match {
-      case (_, Left(e2)) => Left(e2)
       case (Left(e1), _) => Left(e1)
+      case (_, Left(e2)) => Left(e2)
       case (Right(v1), Right(v2)) => Right(f(v1, v2))
     }
 
@@ -35,14 +35,10 @@ object Either {
   }
 
 
-  def sequence[E, A](a: List[Either[E, A]]): Either[E, List[A]] = {
-    val emptyList: Either[E, List[A]] = Right(List.empty[A])
-    a.foldLeft(emptyList) {
-      (listOpt: Either[E, List[A]], aEither: Either[E, A]) =>
-        listOpt.flatMap {
-          list => aEither.map(a => list ++ List(a))
-        }
-    }
+  def sequence[E, A](a: List[Either[E, A]]): Either[E, List[A]] = a match {
+    case Nil => Right(Nil)
+    case hEi :: tEi =>
+      hEi.map2(sequence(tEi))((h, tail) => List(h) ++ tail)
   }
 
 
