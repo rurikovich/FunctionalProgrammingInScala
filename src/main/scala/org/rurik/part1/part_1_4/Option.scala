@@ -1,4 +1,4 @@
-package org.rurik.part_1_4
+package org.rurik.part1.part_1_4
 
 sealed trait Option[+A] {
 

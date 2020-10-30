@@ -1,5 +1,6 @@
-package org.rurik
+package org.rurik.part1
 
+import org.rurik.{Branch, Leaf, Tree}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 

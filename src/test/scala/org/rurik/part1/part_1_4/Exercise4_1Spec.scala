@@ -1,6 +1,6 @@
-package org.rurik.part_1_4
+package org.rurik.part1.part_1_4
 
-import org.rurik.part_1_4.Option.{map2, sequence, traverse, variance}
+import org.rurik.part1.part_1_4.Option.{map2, sequence, traverse, variance}
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
 

@@ -1,5 +1,4 @@
-package org.rurik
-
+package org.rurik.part1
 
 import org.rurik.Exercise2_2.isSorted
 import org.scalatest.flatspec._
