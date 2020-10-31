@@ -1,4 +1,4 @@
-package org.rurik.part1.part_1_4
+package org.rurik.part1.part1_4
 
 sealed trait Either[+E, +A] {
   def map[B](f: A => B): Either[E, B] = this match {

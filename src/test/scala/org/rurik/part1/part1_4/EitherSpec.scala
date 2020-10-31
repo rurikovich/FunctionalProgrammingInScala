@@ -1,6 +1,6 @@
-package org.rurik.part1.part_1_4
+package org.rurik.part1.part1_4
 
-import org.rurik.part1.part_1_4.Either.{sequence, traverse}
+import org.rurik.part1.part1_4.Either.{sequence, traverse}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
