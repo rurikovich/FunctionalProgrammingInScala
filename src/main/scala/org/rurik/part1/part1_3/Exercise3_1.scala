@@ -1,6 +1,7 @@
-package org.rurik
+package org.rurik.part1.part1_3
 
-import org.rurik.List._
+import List.{foldRight, sum}
+
 
 object Exercise3_1 extends App {
 
@@ -18,7 +19,4 @@ object Exercise3_1 extends App {
   println(value)
 
 
-
-
 }
-

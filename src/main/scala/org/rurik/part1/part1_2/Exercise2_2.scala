@@ -1,4 +1,4 @@
-package org.rurik
+package org.rurik.part1.part1_2
 
 object Exercise2_2 {
 

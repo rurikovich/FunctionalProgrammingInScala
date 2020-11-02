@@ -1,4 +1,4 @@
-package org.rurik
+package org.rurik.part1.part1_3
 
 sealed trait List[+A]
 

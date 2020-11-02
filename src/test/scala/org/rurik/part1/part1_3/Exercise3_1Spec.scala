@@ -1,7 +1,6 @@
-package org.rurik.part1
+package org.rurik.part1.part1_3
 
-import org.rurik.List._
-import org.rurik.{List, Nil}
+import List._
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
 

@@ -1,10 +1,6 @@
-package org.rurik
+package org.rurik.part1.part1_3
 
 import java.lang.Math._
-
-import org.rurik.Tree.fold
-
-import scala.annotation.tailrec
 
 sealed trait Tree[+A]
 

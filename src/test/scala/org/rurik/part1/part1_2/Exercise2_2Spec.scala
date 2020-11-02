@@ -1,6 +1,6 @@
-package org.rurik.part1
+package org.rurik.part1.part1_2
 
-import org.rurik.Exercise2_2.isSorted
+import org.rurik.part1.part1_2.Exercise2_2.isSorted
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
 
