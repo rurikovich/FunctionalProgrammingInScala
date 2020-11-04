@@ -1,12 +1,12 @@
 package org.rurik.part1.part1_6
 
-import org.rurik.part1.part1_6.FuncStateExamples._
+import org.rurik.part1.part1_6.RNG._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import org.scalatest.matchers.should.Matchers._
 import org.scalactic.TypeCheckedTripleEquals._
 
-class FuncStateSpec extends AnyFlatSpec with should.Matchers {
+class RNGSpec extends AnyFlatSpec with should.Matchers {
 
   "nonNegativeInt" should "return only positive numbers" in {
     nonNegativeInt(SimpleRNG(1))._1 > 0 shouldBe true
