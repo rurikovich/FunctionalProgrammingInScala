@@ -3,8 +3,6 @@ package org.rurik.part1.part1_6
 import org.rurik.part1.part1_6.RNG._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import org.scalatest.matchers.should.Matchers._
-import org.scalactic.TypeCheckedTripleEquals._
 
 class RNGSpec extends AnyFlatSpec with should.Matchers {
 
