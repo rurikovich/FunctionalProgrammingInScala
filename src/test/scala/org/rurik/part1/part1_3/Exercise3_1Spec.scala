@@ -12,6 +12,8 @@ class Exercise3_1Spec extends AnyFlatSpec with should.Matchers {
     drop(List(), 3) shouldBe List()
     drop(List(1), 3) shouldBe List()
     drop(Nil, 3) shouldBe Nil
+
+    dropWhile(List(1, 2, 3, 4, 5))(_ <= 3) shouldBe List(4, 5)
   }
 
   "List" should "init correctly" in {
