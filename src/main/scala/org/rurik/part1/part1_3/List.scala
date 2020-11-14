@@ -41,9 +41,10 @@ object List {
     go(n, l)
   }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] =
+  @annotation.tailrec
+  def dropWhile[A](l: List[A])(f: A => Boolean): List[A] =
     l match {
-      case Cons(x, tail) if f(x) => dropWhile(tail, f)
+      case Cons(x, tail) if f(x) => dropWhile(tail)(f)
       case _ => l
     }
 
