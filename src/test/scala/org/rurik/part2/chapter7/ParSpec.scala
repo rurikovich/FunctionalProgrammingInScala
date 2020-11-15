@@ -10,7 +10,7 @@ class ParSpec extends AnyFlatSpec with should.Matchers {
 
   val es = Executors.newFixedThreadPool(2)
 
-  "Combinators" should "operate correctly correctly" in {
+  "Combinators" should "operate correctly" in {
 
     val n = 1000
 
