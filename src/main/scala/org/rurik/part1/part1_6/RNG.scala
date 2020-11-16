@@ -94,13 +94,30 @@ object RNG {
     g(a)(r1)
   }
 
+  def isIn32Bit(i: Int, n: Int, mod: Int) = i + (n - 1) - mod >= 0
+
   def nonNegativeLessThan(n: Int): Rand[Int] = {
     val randA: Rand[Int] = nonNegativeInt
 
     val randBFn: Int => Rand[Int] =
       (i: Int) => {
         val mod = i % n
-        if (i + (n - 1) - mod >= 0) unit(mod) else nonNegativeLessThan(n)
+        if (isIn32Bit(i, n, mod)) unit(mod) else nonNegativeLessThan(n)
+      }
+
+    flatMap(randA)(randBFn)
+  }
+
+  def nonNegativeBetween(start: Int, end: Int): Rand[Int] = {
+    val randA: Rand[Int] = nonNegativeInt
+
+    val randBFn: Int => Rand[Int] =
+      (i: Int) => {
+        val n = end - (start + 1)
+        val mod = (start + 1) + (i % n)
+
+        if (isIn32Bit(i, n, mod)) unit(mod) else nonNegativeBetween(start, end)
+
       }
 
     flatMap(randA)(randBFn)

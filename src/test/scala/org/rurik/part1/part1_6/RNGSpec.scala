@@ -59,6 +59,26 @@ class RNGSpec extends AnyFlatSpec with should.Matchers {
     (v4 >= 0 && v4 < n) shouldBe true
   }
 
+
+  "nonNegativeBetween" should "operate correctly" in {
+    val simpleRNG = SimpleRNG(123)
+    val start = 3
+    val end = 8
+
+    val rand: Rand[Int] = nonNegativeBetween(start, end)
+
+    val (v1, r1) = rand(simpleRNG)
+    val (v2, r2) = rand(r1)
+    val (v3, r3) = rand(r2)
+    val (v4, _) = rand(r3)
+
+    v1 should (be > start and be < end)
+    v2 should (be > start and be < end)
+    v3 should (be > start and be < end)
+    v4 should (be > start and be < end)
+
+  }
+
   "map" should "operate correctly" in {
     val rnd = SimpleRNG(123)
 
