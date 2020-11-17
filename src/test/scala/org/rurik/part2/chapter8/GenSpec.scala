@@ -45,4 +45,24 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
   }
 
 
+  "flatMap" should "operate correctly" in {
+
+    val genInt: Gen[Int] = Gen(State(_.nextInt))
+
+    def genStr(v: Int): Gen[String] =
+      Gen[String] {
+        State {
+          rnd =>
+            val (i, newRnd) = genInt.sample.run(rnd)
+            (s"($i,$v)", newRnd)
+        }
+      }
+
+
+    val generatedStr = genInt.flatMap(genStr).sample.run(rnd)._1
+    val generatedInt = genInt.sample.run(rnd)._1
+
+    generatedStr should endWith(s",$generatedInt)")
+  }
+
 }

@@ -3,7 +3,13 @@ package org.rurik.part2.chapter8
 import org.rurik.part1.part1_6.RNG.Rand
 import org.rurik.part1.part1_6.{RNG, State}
 
-case class Gen[A](sample: State[RNG, A])
+case class Gen[A](sample: State[RNG, A]){
+  def flatMap[B](f: A => Gen[B]): Gen[B] =
+    Gen(sample.flatMap(a => f(a).sample))
+
+  /* A method alias for the function we wrote earlier. */
+  def listOfN(size: Int): Gen[List[A]] = ???
+}
 
 object Gen {
 
