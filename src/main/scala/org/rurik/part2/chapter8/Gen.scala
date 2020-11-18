@@ -1,14 +1,27 @@
 package org.rurik.part2.chapter8
 
 import org.rurik.part1.part1_6.RNG.Rand
-import org.rurik.part1.part1_6.{RNG, State}
+import org.rurik.part1.part1_6.{RNG, SimpleRNG, State}
 
-case class Gen[A](sample: State[RNG, A]){
+case class Gen[A](sample: State[RNG, A]) {
+
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(a => f(a).sample))
 
-  /* A method alias for the function we wrote earlier. */
-  def listOfN(size: Int): Gen[List[A]] = ???
+  def listOfN(size: Int): Gen[List[A]] = flatMap {
+    a: A =>
+      Gen[List[A]] {
+        State {
+          rnd =>
+            val list = (0 until size).map {
+              _ => sample.run(rnd)._1
+            }.toList
+            (list, rnd)
+        }
+      }
+
+
+  }
 }
 
 object Gen {
@@ -18,6 +31,9 @@ object Gen {
   }
 
   def unit[A](a: => A): Gen[A] = Gen[A](State(RNG.unit(a)(_)))
+
+  def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
+    boolean.flatMap(b => if (b) g1 else g2)
 
   def boolean: Gen[Boolean] = Gen[Boolean](State(RNG.map(RNG.int)(_ > 0)))
 
