@@ -32,6 +32,11 @@ object Gen {
 
   def unit[A](a: => A): Gen[A] = Gen[A](State(RNG.unit(a)(_)))
 
+  /*
+  проблема в том что мне хочется чтобы g1 и g2 выполнялись на том же RNG что и был передан в функцию изначально.
+  Это нужно для тестирования
+  возможно это можно решить тестируя на  newRng  из `val (i, newRng) = rng.nextInt`
+   */
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     Gen[A] {
       State {
@@ -42,7 +47,51 @@ object Gen {
       }
     }
 
-  //  boolean.flatMap((b: Boolean) => if (b) g1 else g1)
+  /*
+  проблема в том что мне хочется чтобы g1 и g2 выполнялись на том же RNG что и был передан в функцию изначально.
+  Это нужно для тестирования
+  возможно это можно решить тестируя на  newRng  из `val (i, newRng) = rng.nextInt`
+   */
+  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] =
+    Gen[A] {
+      State {
+        rng =>
+          val (i, _) = rng.nextInt
+          val (gen1, w1) = g1
+          val (gen2, w2) = g2
+
+          val step: Double = intervalStep(w1, w2)
+          val endOfW1Interval = step * w1
+
+          val gen = if (absInt(i) <= endOfW1Interval) gen1 else gen2
+          gen.sample.run(rng)
+      }
+    }
+
+
+  /*
+   делим всю длину int'а на кол-во частей равное сумме весов.
+   т.е. если w1=3 а w2=6, то делим интервал возможных значений Int на 9 частей
+    */
+  private def intervalStep(w1: Double, w2: Double): Double = {
+    val sumW = w1 + w2
+    val start = Int.MinValue
+    val end = Int.MaxValue
+
+    val fullLengt = -start + end
+    fullLengt / sumW
+  }
+
+  /*
+  вычисляем положительное значение для i, если принять Int.MinValue за начало отсчета
+   */
+  private def absInt[A](i: Int) = {
+    if (i < 0) -i else -Int.MinValue + i
+  }
+
+  def intGen: Gen[Int] = {
+    Gen[Int](State(_.nextInt))
+  }
 
   def boolean: Gen[Boolean] = Gen[Boolean](State(RNG.map(RNG.int)(_ > 0)))
 
