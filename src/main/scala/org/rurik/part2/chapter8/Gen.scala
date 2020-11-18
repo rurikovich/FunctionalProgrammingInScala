@@ -33,7 +33,16 @@ object Gen {
   def unit[A](a: => A): Gen[A] = Gen[A](State(RNG.unit(a)(_)))
 
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
-    boolean.flatMap(b => if (b) g1 else g2)
+    Gen[A] {
+      State {
+        rng =>
+          val (v, _) = rng.nextInt
+          val gen = if (v > 0) g1 else g2
+          gen.sample.run(rng)
+      }
+    }
+
+  //  boolean.flatMap((b: Boolean) => if (b) g1 else g1)
 
   def boolean: Gen[Boolean] = Gen[Boolean](State(RNG.map(RNG.int)(_ > 0)))
 

@@ -74,16 +74,17 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
     generatedStr should endWith(s",$generatedInt)")
   }
 
+  val g1: Gen[Int] = Gen(State(_.nextInt))
+  val g2: Gen[Int] = Gen(State {
+    _.nextInt match {
+      case (v, rng) => (v + (v % 3), rng)
+    }
+  })
+
   "union" should "operate correctly" in {
 
-    val g1: Gen[Int] = Gen(State(_.nextInt))
-    val g2: Gen[Int] = Gen(State {
-      _.nextInt match {
-        case (v, rng) => (v + (v % 3), rng)
-      }
-    })
 
-    val listOfG1orG2generatedValuesWithRNG: Seq[(Int, SimpleRNG)] = (0 until 2_000_000).map(SimpleRNG(_)).map {
+    val listOfG1orG2generatedValuesWithRNG: Seq[(Int, SimpleRNG)] = (1 until 2_000_000).map(SimpleRNG(_)).map {
       rng => (Gen.union(g1, g2).sample.run(rng)._1, rng)
     }
 
@@ -92,16 +93,18 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
     val eps = 0.001
     Math.abs(g1Likelihood - g2Likelihood) should be < eps
-
   }
 
   type Likelihood = Double
 
-  def likelihood(generatedValuesList: Seq[(Int, SimpleRNG)], gen: Gen[Int]): Likelihood =
-    generatedValuesList.count {
+  def likelihood(generatedValuesList: Seq[(Int, SimpleRNG)], gen: Gen[Int]): Likelihood = {
+    val count = generatedValuesList.count {
       case (v, rng) =>
-        v == gen.sample.run(rng)._1
-    }.toDouble / generatedValuesList.size
+        val genV = gen.sample.run(rng)._1
+        v == genV
+    }.toDouble
+    count / generatedValuesList.size
+  }
 
 
 }
