@@ -19,9 +19,19 @@ case class Gen[A](sample: State[RNG, A]) {
             (list, rnd)
         }
       }
-
-
   }
+
+  def unsized: SGen[A] = SGen[A](
+    _ => this
+  )
+
+}
+
+case class SGen[+A](forSize: Int => Gen[A])
+
+object SGen {
+  def listOf[A](g: Gen[A]): SGen[List[A]] =
+    SGen[List[A]](i => g.listOfN(i))
 }
 
 object Gen {

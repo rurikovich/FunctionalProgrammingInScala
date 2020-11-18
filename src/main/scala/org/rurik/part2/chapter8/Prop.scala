@@ -1,7 +1,7 @@
 package org.rurik.part2.chapter8
 
 import org.rurik.part1.part1_6.RNG
-import org.rurik.part2.chapter8.Prop.{FailedCase, SuccessCount, TestCases}
+import org.rurik.part2.chapter8.Prop.{FailedCase, MaxSize, SuccessCount, TestCases}
 
 object Prop {
   type FailedCase = String
@@ -9,35 +9,34 @@ object Prop {
 
   type TestCases = Int
 
+  type MaxSize = Int
 
-  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
-    (n, rng) =>
-      randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
-        case (a, i) => try {
-          if (f(a)) Passed else Falsified(a.toString, i)
-        } catch {
-          case e: Exception => Falsified(buildMsg(a, e), i)
-        }
-      }.find(_.isFalsified).getOrElse(Passed)
+
+  def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
+    forAll(g.forSize(_))(f)
+
+  def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop = Prop {
+    (max, n, rng) =>
+      val casesPerSize = (n + (max - 1)) / max
+      val props: Stream[Prop] =
+        Stream.from(0).take((n min max) + 1).map(i => forAll(g(i).unsized)(f))
+      val prop: Prop =
+        props.map(p => Prop { (max, _, rng) =>
+          p.run(max, casesPerSize, rng)
+        }).toList.reduce(_ && _)
+      prop.run(max, n, rng)
   }
 
-  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
-    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
-
-  def buildMsg[A](s: A, e: Exception): String =
-    s"test case: $s\n" +
-      s"generated an exception: ${e.getMessage}\n" +
-      s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
 }
 
 
-case class Prop(run: (TestCases, RNG) => Result) {
+case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
 
   def &&(p: Prop): Prop = Prop {
-    (n, rng) =>
-      val r1 = this.run(n, rng)
-      val r2 = p.run(n, rng)
+    (max, n, rng) =>
+      val r1 = this.run(max, n, rng)
+      val r2 = p.run(max, n, rng)
       (r1, r2) match {
         case (Passed, Passed) => Passed
         case (Passed, Falsified(failure, successes)) => Falsified(failure, successes)
@@ -51,9 +50,9 @@ case class Prop(run: (TestCases, RNG) => Result) {
   }
 
   def ||(p: Prop): Prop = Prop {
-    (n, rng) =>
-      val r1 = this.run(n, rng)
-      val r2 = p.run(n, rng)
+    (max, n, rng) =>
+      val r1 = this.run(max, n, rng)
+      val r2 = p.run(max, n, rng)
       (r1, r2) match {
         case (Passed, Passed) => Passed
         case (Passed, _) => Passed
