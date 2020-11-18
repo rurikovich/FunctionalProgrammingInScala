@@ -1,8 +1,7 @@
 package org.rurik.part2.chapter8
 
-import org.rurik.part1.part1_6.{RNG, SimpleRNG, State}
-import org.rurik.part2.chapter8.Gen.{choose, intGen}
-import org.scalacheck
+import org.rurik.part1.part1_6.{SimpleRNG, State}
+import org.rurik.part2.chapter8.Gen.choose
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -73,22 +72,18 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
   }
 
 
-  val g1: Gen[Int] = Gen(State(_.nextInt))
-  val g2: Gen[Int] = Gen(State {
-    _.nextInt match {
-      case (v, rng) => (v + (v % 3), rng)
-    }
-  })
-
   "union" should "operate correctly" in {
+    val g1Value = 1
+    val g2Value = 2
+    val g1: Gen[Int] = Gen(State(rng => (g1Value, rng)))
+    val g2: Gen[Int] = Gen(State(rng => (g2Value, rng)))
 
-
-    val listOfG1orG2generatedValuesWithRNG: Seq[(Int, SimpleRNG)] = (1 until 2_000_000).map(SimpleRNG(_)).map {
-      rng => (Gen.union(g1, g2).sample.run(rng)._1, rng)
+    val listOfG1orG2generatedValues: Seq[Int] = (1 until 2_000_000).map(SimpleRNG(_)).map {
+      rng => Gen.union(g1, g2).sample.run(rng)._1
     }
 
-    val g1Likelihood = likelihood(listOfG1orG2generatedValuesWithRNG, g1)
-    val g2Likelihood = likelihood(listOfG1orG2generatedValuesWithRNG, g2)
+    val g1Likelihood = likelihood[Int](listOfG1orG2generatedValues, g1Value)
+    val g2Likelihood = likelihood[Int](listOfG1orG2generatedValues, g2Value)
 
     val eps = 0.001
     Math.abs(g1Likelihood - g2Likelihood) should be < eps
@@ -96,6 +91,11 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
   }
 
   "weighted" should "operate correctly" in {
+    val g1Value: Int = 1
+    val g2Value: Int = 2
+    val g1: Gen[Int] = Gen(State(rng => (g1Value, rng)))
+    val g2: Gen[Int] = Gen(State(rng => (g2Value, rng)))
+
     val w1Gen = org.scalacheck.Gen.choose(1, 1000)
     val w2Gen = org.scalacheck.Gen.choose(1, 1000)
 
@@ -105,7 +105,13 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
     check {
       forAll(w1Gen, w2Gen) {
         case (w1, w2) =>
-          val (g1Likelihood, g2Likelihood) = computeWeightedGenLikelihoods(g1, w1, g2, w2, samplesCount)
+          val listOfG1orG2generatedValues = (0 until samplesCount).map(SimpleRNG(_)).map {
+            rng => Gen.weighted((g1, w1), (g2, w2)).sample.run(rng)._1
+          }
+
+          val g1Likelihood: Likelihood = likelihood[Int](listOfG1orG2generatedValues, g1Value)
+          val g2Likelihood: Likelihood = likelihood[Int](listOfG1orG2generatedValues, g2Value)
+
           Math.abs(g1Likelihood - g2Likelihood) < eps
       }
     }
@@ -113,26 +119,10 @@ class GenSpec extends AnyFlatSpec with Checkers with should.Matchers {
   }
 
 
-  def computeWeightedGenLikelihoods(g1: Gen[Int], w1: Double, g2: Gen[Int], w2: Double, samplesCount: Int): (Likelihood, Likelihood) = {
-    def listOfG1orG2generatedValuesWithRNG(samplesCount: Int): Seq[(Int, SimpleRNG)] = (0 until samplesCount).map(SimpleRNG(_)).map {
-      rng => (Gen.weighted((g1, w1), (g2, w2)).sample.run(rng)._1, rng)
-    }
-
-    val g1Likelihood: Likelihood = likelihood(listOfG1orG2generatedValuesWithRNG(samplesCount), g1)
-    val g2Likelihood: Likelihood = likelihood(listOfG1orG2generatedValuesWithRNG(samplesCount), g2)
-
-    (g1Likelihood, g2Likelihood)
-  }
-
-
   type Likelihood = Double
 
-  def likelihood(generatedValuesList: Seq[(Int, SimpleRNG)], gen: Gen[Int]): Likelihood = {
-    val count = generatedValuesList.count {
-      case (v, rng) =>
-        val genV = gen.sample.run(rng)._1
-        v == genV
-    }.toDouble
+  def likelihood[A](generatedValuesList: Seq[A], constGenValue: A): Likelihood = {
+    val count = generatedValuesList.count(_ == constGenValue).toDouble
     count / generatedValuesList.size
   }
 

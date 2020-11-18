@@ -1,6 +1,6 @@
 package org.rurik.part2.chapter8
 
-import org.rurik.part1.part1_6.RNG.Rand
+import org.rurik.part1.part1_6.RNG.{Rand, int}
 import org.rurik.part1.part1_6.{RNG, SimpleRNG, State}
 
 case class Gen[A](sample: State[RNG, A]) {
@@ -38,36 +38,23 @@ object Gen {
   возможно это можно решить тестируя на  newRng  из `val (i, newRng) = rng.nextInt`
    */
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
-    Gen[A] {
-      State {
-        rng =>
-          val (v, _) = rng.nextInt
-          val gen = if (v > 0) g1 else g2
-          gen.sample.run(rng)
-      }
-    }
+    boolean.flatMap(b => if (b) g1 else g2)
 
   /*
   проблема в том что мне хочется чтобы g1 и g2 выполнялись на том же RNG что и был передан в функцию изначально.
   Это нужно для тестирования
   возможно это можно решить тестируя на  newRng  из `val (i, newRng) = rng.nextInt`
    */
-  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] =
-    Gen[A] {
-      State {
-        rng =>
-          val (i, _) = rng.nextInt
-          val (gen1, w1) = g1
-          val (gen2, w2) = g2
+  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] = intGen.flatMap {
+    i =>
+      val (gen1, w1) = g1
+      val (gen2, w2) = g2
 
-          val step: Double = intervalStep(w1, w2)
-          val endOfW1Interval = step * w1
+      val step: Double = intervalStep(w1, w2)
+      val endOfW1Interval = step * w1
 
-          val gen = if (absInt(i) <= endOfW1Interval) gen1 else gen2
-          gen.sample.run(rng)
-      }
-    }
-
+      if (absInt(i) <= endOfW1Interval) gen1 else gen2
+  }
 
   /*
    делим всю длину int'а на кол-во частей равное сумме весов.
