@@ -1,6 +1,6 @@
 package org.rurik.part2.chapter8
 
-import org.rurik.part1.part1_6.RNG
+import org.rurik.part1.part1_6.{RNG, SimpleRNG}
 import org.rurik.part2.chapter8.Prop.{FailedCase, MaxSize, SuccessCount, TestCases}
 
 object Prop {
@@ -27,6 +27,15 @@ object Prop {
       prop.run(max, n, rng)
   }
 
+
+  def run(p: Prop,
+          maxSize: Int = 10,
+          testCases: Int = 10,
+          rng: RNG = SimpleRNG(System.currentTimeMillis)
+         ): Unit = p.run(maxSize, testCases, rng) match {
+    case Falsified(msg, n) => println(s"! Falsified after $n passed tests:\n $msg")
+    case Passed => println(s"+ OK, passed $testCases tests.")
+  }
 
 }
 

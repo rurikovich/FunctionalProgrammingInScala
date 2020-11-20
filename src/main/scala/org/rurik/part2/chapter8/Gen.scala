@@ -8,6 +8,8 @@ case class Gen[A](sample: State[RNG, A]) {
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(a => f(a).sample))
 
+  def listOf1(n: Int): Gen[List[A]] = listOfN(n max 1)
+
   def listOfN(size: Int): Gen[List[A]] = flatMap {
     a: A =>
       Gen[List[A]] {
@@ -27,7 +29,7 @@ case class Gen[A](sample: State[RNG, A]) {
 
 }
 
-case class SGen[+A](forSize: Int => Gen[A])
+case class SGen[A](forSize: Int => Gen[A])
 
 object SGen {
   def listOf[A](g: Gen[A]): SGen[List[A]] =
