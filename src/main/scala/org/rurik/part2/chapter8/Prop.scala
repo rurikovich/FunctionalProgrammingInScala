@@ -11,6 +11,8 @@ object Prop {
 
   type MaxSize = Int
 
+  def apply(f: (TestCases, RNG) => Result): Prop =
+    Prop { (_, n, rng) => f(n, rng) }
 
   def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
     forAll(g.forSize(_))(f)
@@ -19,14 +21,36 @@ object Prop {
     (max, n, rng) =>
       val casesPerSize = (n + (max - 1)) / max
       val props: Stream[Prop] =
-        Stream.from(0).take((n min max) + 1).map(i => forAll(g(i).unsized)(f))
-      val prop: Prop =
-        props.map(p => Prop { (max, _, rng) =>
+        Stream.from(0).take((n min max) + 1).map(i => forAll(g(i))(f))
+      val prop: Prop =        props.map(p => Prop { (max, _, rng) =>
           p.run(max, casesPerSize, rng)
         }).toList.reduce(_ && _)
       prop.run(max, n, rng)
   }
 
+
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
+    (n: MaxSize, rng: RNG) =>
+      randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+        case (a, i) => try {
+          if (f(a)) Passed else Falsified(a.toString, i)
+        } catch {
+          case e: Exception => Falsified(buildMsg(a, e), i)
+        }
+      }.find(_.isFalsified).getOrElse(Passed)
+  }
+
+  /* Produce an infinite random stream from a `Gen` and a starting `RNG`. */
+  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
+    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+
+  // String interpolation syntax. A string starting with `s"` can refer to
+  // a Scala value `v` as `$v` or `${v}` in the string.
+  // This will be expanded to `v.toString` by the Scala compiler.
+  def buildMsg[A](s: A, e: Exception): String =
+    s"test case: $s\n" +
+      s"generated an exception: ${e.getMessage}\n" +
+      s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
   def run(p: Prop,
           maxSize: Int = 10,
