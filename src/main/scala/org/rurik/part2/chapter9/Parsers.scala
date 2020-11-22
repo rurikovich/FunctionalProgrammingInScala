@@ -25,8 +25,7 @@ trait Parsers[ParseError, Parser[+_]] {
 
   def slice[A](p: Parser[A]): Parser[String]
 
-  def succeed[A](a: A): Parser[A] = string("") map (_ => a)
-
+  def succeed[A](a: A): Parser[A]
 
   def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _) or succeed(List())
 

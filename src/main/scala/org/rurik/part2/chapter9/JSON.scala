@@ -38,7 +38,7 @@ class JsonParsers extends Parsers[Exception, JsonParser] {
       (s: String) => p.run(s).map(f).flatMap(_.run(s))
     )
 
-
+  override def succeed[A](a: A): JsonParser[A] = JsonParser[A](s => Right(a))
 }
 
 

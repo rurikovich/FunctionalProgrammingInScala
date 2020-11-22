@@ -11,7 +11,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   val parsers: JsonParsers = new JsonParsers()
 
-  "JsonParsers" should "parse str to JSON correctly" in {
+  "JsonParser succeed" should "parse any str to JNull correctly" in {
     val strGen = Gen.asciiStr
 
     check {
