@@ -28,7 +28,6 @@ trait Parsers[ParseError, Parser[+_]] {
   def succeed[A](a: A): Parser[A] = string("") map (_ => a)
 
 
-
   def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _) or succeed(List())
 
   def listOfN[A](n: Int, p: Parser[A]): Parser[List[A]] = {
@@ -75,6 +74,9 @@ trait Parsers[ParseError, Parser[+_]] {
     def many1(): Parser[List[A]] = self.many1(p)
 
     def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
+
+    def run(input: String): Either[ParseError, A] = self.run(p)(input)
+
 
   }
 

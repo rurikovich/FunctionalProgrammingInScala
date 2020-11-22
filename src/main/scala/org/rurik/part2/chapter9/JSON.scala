@@ -23,26 +23,23 @@ object JSON {
 
 class JsonParsers extends Parsers[Exception, JsonParser] {
 
-  override implicit def string(s: String): JsonParser[String] = JsonParser[String](s)
+  override implicit def string(s: String): JsonParser[String] = JsonParser[String](str => Right(s))
 
   override implicit def regex(r: Regex): JsonParser[String] = ???
 
-  override def run[A](p: JsonParser[A])(input: String): Either[Exception, A] = ???
+  override def run[A](p: JsonParser[A])(input: String): Either[Exception, A] = p.run(input)
 
   override def or[A](s1: JsonParser[A], s2: => JsonParser[A]): JsonParser[A] = ???
 
   override def slice[A](p: JsonParser[A]): JsonParser[String] = ???
 
-  override def flatMap[A, B](p: JsonParser[A])(f: A => JsonParser[B]): JsonParser[B] = {
-    s:String =>
-      run(p)(s).map{
-        a=>f(a)
-      }
-
-  }
+  override def flatMap[A, B](p: JsonParser[A])(f: A => JsonParser[B]): JsonParser[B] =
+    JsonParser[B](
+      (s: String) => p.run(s).map(f).flatMap(_.run(s))
+    )
 
 
 }
 
 
-case class JsonParser[+A](value: A)
+case class JsonParser[+A](run: String => Either[Exception, A])
