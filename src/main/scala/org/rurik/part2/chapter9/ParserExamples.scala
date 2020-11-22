@@ -11,6 +11,6 @@ trait ParserExamples extends Parsers[ExampleParseError, ExampleParser] {
 object ParserExamples {
   type ExampleParseError = Exception
 
-  class ExampleParser[A]()
+  class ExampleParser[+A]()
 
 }

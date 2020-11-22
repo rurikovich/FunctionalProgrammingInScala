@@ -21,9 +21,19 @@ trait Parsers[ParseError, Parser[+_]] {
 
   def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A]
 
-  def listOfN[A](n: Int, p: Parser[A]): Parser[List[A]]
+  def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
+
+  def slice[A](p: Parser[A]): Parser[String]
+
+  def succeed[A](a: A): Parser[A] = string("") map (_ => a)
+
+
 
   def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _) or succeed(List())
+
+  def listOfN[A](n: Int, p: Parser[A]): Parser[List[A]] = {
+    map2(p, listOfN(n - 1, p))(_ :: _) or succeed(List())
+  }
 
   def map[A, B](p: Parser[A])(f: A => B): Parser[B] = p.flatMap {
     a => succeed(f(a))
@@ -35,12 +45,7 @@ trait Parsers[ParseError, Parser[+_]] {
       b <- p2
     } yield f(a, b)
 
-
   def char(c: Char): Parser[Char] = string(c.toString) map (_.charAt(0))
-
-  def succeed[A](a: A): Parser[A] = string("") map (_ => a)
-
-  def slice[A](p: Parser[A]): Parser[String]
 
   def many1[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _)
 
@@ -50,12 +55,9 @@ trait Parsers[ParseError, Parser[+_]] {
       b <- p2
     } yield (a, b)
 
-  def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
-
   def parseIntFollowedByChars[A](p: Parser[Int], c: Char): Parser[List[Char]] = {
     p.flatMap(n => listOfN(n, char(c)))
   }
-
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -75,7 +77,6 @@ trait Parsers[ParseError, Parser[+_]] {
     def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
 
   }
-
 
   object Laws {
     def equal[A](p1: Parser[A], p2: Parser[A])(in: Gen[String]): Prop =
