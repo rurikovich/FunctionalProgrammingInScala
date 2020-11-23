@@ -2,7 +2,7 @@ package org.rurik.part2.chapter9
 
 import org.rurik.part2.chapter9.json.{JSON, JsonParser, JsonParsers}
 import org.rurik.part2.chapter9.json.JSON.{JBool, JNull, JNumber, JString}
-import org.rurik.part2.chapter9.json.JsonParsers.error
+import org.rurik.part2.chapter9.json.JsonParsers.{error, quote}
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -26,7 +26,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
     }
   }
 
-  "JNullParser" should "parse any str to JNull correctly" in {
+  "JNullParser" should "parse \"null\" to JNull correctly" in {
     parsers.JNullParser.run("null") shouldEqual Right(JNull)
   }
 
@@ -34,8 +34,19 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
     val numGen = Gen.double
     check {
       forAll(numGen) {
-        case (d) =>
-          parsers.JNumberParser.run(s"$d") == Right(JNumber(d))
+        d => parsers.JNumberParser.run(s"$d") == Right(JNumber(d))
+      }
+    }
+  }
+
+  "JStringParser" should "parse any quoted string to string correctly" in {
+    val strGen = Gen.stringOfN(10, Gen.asciiPrintableChar)
+
+    check {
+      forAll(strGen) {
+        str =>
+          val s: String = s"""$quote$str$quote""".stripMargin
+          parsers.JStringParser.run(s) == Right(JString(str))
       }
     }
   }

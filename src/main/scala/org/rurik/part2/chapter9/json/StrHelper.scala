@@ -27,11 +27,11 @@ case class StrHelper(str: String) {
   }
 
   def framedBy(frame: String): Boolean = {
-    str.startsWith(frame) && str.endsWith(frame)
+    str.startsWith(frame) && str.endsWith(frame) && (2 * frame.length <= str.length)
   }
 
   def framedBy(leftFrame: String, rightFrame: String): Boolean = {
-    str.startsWith(leftFrame) && str.endsWith(rightFrame)
+    str.startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length <= str.length)
   }
 
 }

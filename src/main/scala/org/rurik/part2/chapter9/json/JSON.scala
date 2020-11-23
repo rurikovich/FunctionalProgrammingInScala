@@ -2,7 +2,7 @@ package org.rurik.part2.chapter9.json
 
 import org.rurik.part2.chapter9.Parsers
 import org.rurik.part2.chapter9.json.JSON._
-import org.rurik.part2.chapter9.json.JsonParsers.error
+import org.rurik.part2.chapter9.json.JsonParsers.{error, quote}
 
 import scala.util.Try
 import scala.util.matching.Regex
@@ -29,8 +29,6 @@ object JSON {
 class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   import StrHelper._
-
-  val quote = "\""
 
   implicit def toJArrayParser(p: JsonParser[List[JSON]]): JsonParser[JSON] = p.map(l => JArray(l.toIndexedSeq))
 
@@ -63,10 +61,11 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   }
 
   val JStringParser: JsonParser[JSON] = JsonParser[JSON] {
-    _.withoutFrame(quote) match {
-      case Some(str) => Right(JString(str))
-      case None => Left(new Exception(error("JString")))
-    }
+    s =>
+      s.withoutFrame(quote) match {
+        case Some(str) => Right(JString(str))
+        case None => Left(new Exception(error("JString")))
+      }
   }
 
   val JBoolParser: JsonParser[JSON] = JsonParser[JSON] {
@@ -111,10 +110,12 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   }
 
 
-
 }
 
 object JsonParsers {
+
+  val quote = "\""
+
   def error(s: String) = s"Failed to parse $s"
 }
 
