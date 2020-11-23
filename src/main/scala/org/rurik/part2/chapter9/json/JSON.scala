@@ -39,7 +39,9 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   override def run[A](p: JsonParser[A])(input: String): Either[Throwable, A] = p.run(input)
 
-  override def or[A](s1: JsonParser[A], s2: => JsonParser[A]): JsonParser[A] = ???
+  override def or[A](s1: JsonParser[A], s2: => JsonParser[A]): JsonParser[A] = JsonParser[A] {
+    s => s1.run(s).orElse(s2.run(s))
+  }
 
   override def slice[A](p: JsonParser[A]): JsonParser[String] = ???
 
