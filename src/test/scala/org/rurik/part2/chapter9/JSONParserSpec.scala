@@ -2,6 +2,7 @@ package org.rurik.part2.chapter9
 
 import org.rurik.part2.chapter9.json.{JSON, JsonParser, JsonParsers}
 import org.rurik.part2.chapter9.json.JSON.{JBool, JNull, JNumber, JString}
+import org.rurik.part2.chapter9.json.JsonParsers.error
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -26,25 +27,15 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
   }
 
   "JNullParser" should "parse any str to JNull correctly" in {
-    val strGen = Gen.asciiStr
-
-    check {
-      forAll(strGen) {
-        case (str) =>
-          val parser: JsonParser[JSON] = parsers.succeed[JSON](JNull)
-          parsers.run(parser)(str) == Right(JNull)
-      }
-    }
+    parsers.JNullParser.run("null") shouldEqual Right(JNull)
   }
 
   "JNumberParser" should "parse any number to double correctly" in {
     val numGen = Gen.double
-
     check {
       forAll(numGen) {
         case (d) =>
-          val parser: JsonParser[JSON] = parsers.succeed[JSON](JNull)
-          parsers.run(parser)(s"$d") == Right(JNull)
+          parsers.JNumberParser.run(s"$d") == Right(JNumber(d))
       }
     }
   }

@@ -2,6 +2,7 @@ package org.rurik.part2.chapter9.json
 
 import org.rurik.part2.chapter9.Parsers
 import org.rurik.part2.chapter9.json.JSON._
+import org.rurik.part2.chapter9.json.JsonParsers.error
 
 import scala.util.Try
 import scala.util.matching.Regex
@@ -109,8 +110,12 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
       JObjectParser
   }
 
-  def error(s: String) = s"Failed to parse $s"
 
+
+}
+
+object JsonParsers {
+  def error(s: String) = s"Failed to parse $s"
 }
 
 
