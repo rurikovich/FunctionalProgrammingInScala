@@ -37,6 +37,7 @@ case class StrHelper(str: String) {
 
   def quoted: String = s"""$quote$str$quote""".stripMargin
 
+
 }
 
 object StrHelper {
@@ -44,4 +45,44 @@ object StrHelper {
   val quote = "\""
 
   implicit def strToStrHelper(str: String): StrHelper = StrHelper(str)
+
+
+  def accumulateTokensInJson(strs: List[String]): List[String] = {
+    val lBracket1 = '['
+    val rBracket1 = ']'
+    val lBracket2 = '{'
+    val rBracket2 = '}'
+
+    case class Acc(list: List[String], b1Counter: Int, b2Counter: Int)
+
+    strs.foldLeft(Acc(List.empty, 0, 0)) {
+      (acc, str) =>
+        val lb1CountInStr = str.count(_ == lBracket1)
+        val r1CountInStr = str.count(_ == rBracket1)
+        val lb2CountInStr = str.count(_ == lBracket2)
+        val rb2CountInStr = str.count(_ == rBracket2)
+
+        if (acc.b1Counter > 0 || acc.b2Counter > 0) {
+          val list = acc.list
+
+          val last: String = list.last
+          val newLast: String = last + "," + str
+          val newList: List[String] = list.take(list.size - 1) ++ List(newLast)
+
+          val newB1Counter = acc.b1Counter + (lb1CountInStr - r1CountInStr)
+          val newB2Counter = acc.b2Counter + (lb2CountInStr - rb2CountInStr)
+          Acc(newList, newB1Counter, newB2Counter)
+        } else {
+
+          val newB1Counter = acc.b1Counter + (lb1CountInStr - r1CountInStr)
+          val newB2Counter = acc.b2Counter + (lb2CountInStr - rb2CountInStr)
+          val newList: List[String] = acc.list ++ List(str)
+          Acc(newList, newB1Counter, newB2Counter)
+        }
+
+    }.list
+
+  }
+
+
 }

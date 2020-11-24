@@ -108,7 +108,8 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
       val map: Either[Throwable, Map[String, JSON]] =
         s.withoutFrameAndDelimeters("{", "}", ",").map {
           elements: List[String] =>
-            elements.flatMap {
+            val elems = accumulateTokensInJson(elements)
+            elems.flatMap {
               el =>
                 val strArr = el.split(":")
                 (strArr.length == 2).toOpt().map {

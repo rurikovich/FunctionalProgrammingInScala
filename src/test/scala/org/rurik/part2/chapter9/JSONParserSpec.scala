@@ -125,7 +125,8 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
         |}
         |""".stripMargin
 
-    JObjectParser.run(json) shouldEqual Right(JObject(Map(
+    val value1 = JObjectParser.run(json)
+    value1 shouldEqual Right(JObject(Map(
       "name1" -> JNumber(1),
       "name2" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
       "name3" -> JString("aaa"),

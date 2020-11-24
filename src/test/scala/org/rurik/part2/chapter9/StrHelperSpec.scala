@@ -15,7 +15,7 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
     check {
       forAll(Gen.asciiStr) {
         str =>
-          val s=str.quoted
+          val s = str.quoted
           s.withoutQuotes() == str
       }
     }
@@ -80,5 +80,23 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
     }
 
   }
+
+  "accumulateTokensInJson" should "operate correctly" in {
+
+    val json =
+      """
+        |"name1":1,
+        |"name2":[true,false,true],
+        |"name3":"aaa"
+        |""".stripMargin
+
+
+    val strs = json.split(",").toList
+
+    val value1 = StrHelper.accumulateTokensInJson(strs).map(_.replace("\n","").replace("\r",""))
+    value1 shouldEqual List("\"name1\":1", "\"name2\":[true,false,true]", "\"name3\":\"aaa\"")
+
+  }
+
 
 }
