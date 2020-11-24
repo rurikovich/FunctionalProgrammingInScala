@@ -1,8 +1,7 @@
 package org.rurik.part2.chapter9
 
 import org.rurik.part2.chapter9.json.{JSON, JsonParser, JsonParsers}
-import org.rurik.part2.chapter9.json.JSON.{JBool, JNull, JNumber, JString}
-import org.rurik.part2.chapter9.json.JsonParsers.{error, quote}
+import org.rurik.part2.chapter9.json.JSON.{JArray, JBool, JNull, JNumber, JString}
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -10,6 +9,8 @@ import org.scalatest.matchers.should
 import org.scalatestplus.scalacheck.Checkers
 
 class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
+
+  import org.rurik.part2.chapter9.json.StrHelper._
 
   val parsers: JsonParsers = new JsonParsers()
 
@@ -41,14 +42,65 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   "JStringParser" should "parse any quoted string to string correctly" in {
     val strGen = Gen.stringOfN(10, Gen.asciiPrintableChar)
-
     check {
       forAll(strGen) {
         str =>
-          val s: String = s"""$quote$str$quote""".stripMargin
-          parsers.JStringParser.run(s) == Right(JString(str))
+          parsers.JStringParser.run(str.quoted) == Right(JString(str))
       }
     }
   }
 
+  "JBoolParser" should "parse true\\false to Boolean correctly" in {
+    val boolGen = Gen.oneOf(true, false)
+    check {
+      forAll(boolGen) {
+        bool =>
+          parsers.JBoolParser.run(s"$bool") == Right(JBool(bool))
+      }
+    }
+  }
+
+
+  "AllJsonParser" should "parse any type  correctly" in {
+    parsers.AllJsonParser.run("null") shouldEqual Right(JNull)
+    parsers.AllJsonParser.run("1") shouldEqual Right(JNumber(1))
+    parsers.AllJsonParser.run("aaa".quoted) shouldEqual Right(JString("aaa"))
+    parsers.AllJsonParser.run("true") shouldEqual Right(JBool(true))
+  }
+
+  "JArrayParser" should "parse [...] to array correctly" in {
+    checkJArray[Int](
+      constValueToGen = 1,
+      constValueToCheck = 1,
+      fn = (i: Int) => JNumber(i)
+    )
+
+    checkJArray[String](
+      constValueToGen = "a".quoted,
+      constValueToCheck = "a",
+      fn = (s: String) => JString(s)
+    )
+
+    checkJArray[Boolean](
+      constValueToGen = false,
+      constValueToCheck = false,
+      fn = (b: Boolean) => JBool(b)
+    )
+
+  }
+
+
+  private def checkJArray[A](constValueToGen: A, constValueToCheck: A, fn: A => JSON): Any = {
+    import parsers._
+
+    val arrGen: Gen[List[A]] = Gen.listOf[A](Gen.const(constValueToGen))
+    check {
+      forAll(arrGen) {
+        list =>
+          val jArrayToCheck = JArray(IndexedSeq.fill(list.size)(constValueToCheck).map(fn))
+          val arrStr = list.mkString("[", ",", "]")
+          JArrayParser.run(arrStr) == Right(jArrayToCheck)
+      }
+    }
+  }
 }

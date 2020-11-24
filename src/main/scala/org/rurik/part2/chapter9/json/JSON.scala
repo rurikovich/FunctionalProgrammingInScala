@@ -2,7 +2,7 @@ package org.rurik.part2.chapter9.json
 
 import org.rurik.part2.chapter9.Parsers
 import org.rurik.part2.chapter9.json.JSON._
-import org.rurik.part2.chapter9.json.JsonParsers.{error, quote}
+import org.rurik.part2.chapter9.json.JsonParsers.error
 
 import scala.util.Try
 import scala.util.matching.Regex
@@ -39,7 +39,10 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   override def run[A](p: JsonParser[A])(input: String): Either[Throwable, A] = p.run(input)
 
   override def or[A](s1: JsonParser[A], s2: => JsonParser[A]): JsonParser[A] = JsonParser[A] {
-    s => s1.run(s).orElse(s2.run(s))
+    s =>
+      s1.run(s).orElse(
+        s2.run(s)
+      )
   }
 
   override def slice[A](p: JsonParser[A]): JsonParser[String] = ???
@@ -57,7 +60,8 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   }
 
   val JNumberParser: JsonParser[JSON] = JsonParser[JSON] {
-    s => Try(s.toDouble).toEither.map(JNumber)
+    s =>
+      Try(s.toDouble).toEither.map(JNumber)
   }
 
   val JStringParser: JsonParser[JSON] = JsonParser[JSON] {
@@ -69,7 +73,8 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   }
 
   val JBoolParser: JsonParser[JSON] = JsonParser[JSON] {
-    s => Try(s.toBoolean).toEither.map(JBool)
+    s =>
+      Try(s.toBoolean).toEither.map(JBool)
   }
 
   val JArrayParser: JsonParser[JSON] = JsonParser[JSON] {
@@ -97,7 +102,10 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
     }
   }
 
-  val JObjectParser: JsonParser[JSON] = JsonParser[JSON](s => Right(JObject(Map.empty)))
+  val JObjectParser: JsonParser[JSON] = JsonParser[JSON](
+    s =>
+      Right(JObject(Map.empty))
+  )
 
 
   val AllJsonParser: JsonParser[JSON] = {
@@ -113,8 +121,6 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 }
 
 object JsonParsers {
-
-  val quote = "\""
 
   def error(s: String) = s"Failed to parse $s"
 }

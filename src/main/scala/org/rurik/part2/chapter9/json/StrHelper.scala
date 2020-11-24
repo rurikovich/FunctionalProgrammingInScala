@@ -1,7 +1,7 @@
 package org.rurik.part2.chapter9.json
 
 import org.rurik.part2.chapter9.json.BoolHelper.boolToOpt
-import org.rurik.part2.chapter9.json.StrHelper.strToStrHelper
+import org.rurik.part2.chapter9.json.StrHelper.{quote, strToStrHelper}
 
 
 object BoolHelper {
@@ -26,16 +26,23 @@ case class StrHelper(str: String) {
       str.substring(frameLength, str.length - frameLength)
   }
 
-  def framedBy(frame: String): Boolean = {
-    str.startsWith(frame) && str.endsWith(frame) && (2 * frame.length <= str.length)
+  /*
+    после вычитания рамок из строки должен оставаться хотя бы 1 символ
+   */
+  def framedBy(leftFrame: String, rightFrame: String): Boolean = {
+    val oneChar = 1
+    str.startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length + oneChar <= str.length )
   }
 
-  def framedBy(leftFrame: String, rightFrame: String): Boolean = {
-    str.startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length <= str.length)
-  }
+  def framedBy(frame: String): Boolean = framedBy(frame, frame)
+
+  def quoted: String =s"""$quote$str$quote""".stripMargin
 
 }
 
 object StrHelper {
+
+  val quote = "\""
+
   implicit def strToStrHelper(str: String): StrHelper = StrHelper(str)
 }

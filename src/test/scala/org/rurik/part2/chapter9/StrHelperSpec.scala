@@ -1,6 +1,5 @@
 package org.rurik.part2.chapter9
 
-import org.rurik.part2.chapter9.json.JsonParsers.quote
 import org.rurik.part2.chapter9.json.StrHelper
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
@@ -16,25 +15,28 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
     check {
       forAll(Gen.asciiStr) {
         str =>
-          val s: String = s""""$str"""".stripMargin
+          val s=str.quoted
           s.withoutQuotes() == str
       }
     }
   }
 
   "framedBy" should "operate correctly" in {
+    import org.scalacheck.Arbitrary.arbitrary
+
+    val nonEmptyStrGen = arbitrary[String].suchThat(!_.isEmpty)
+
     check {
-      forAll(Gen.asciiStr) {
+      forAll(nonEmptyStrGen) {
         str =>
-          val s: String = s""""$str"""".stripMargin
-          s.framedBy(quote)
+          str.quoted.framedBy(quote)
       }
     }
 
     val leftFrame: String = "["
     val rightFrame: String = "]"
     check {
-      forAll(Gen.asciiStr) {
+      forAll(nonEmptyStrGen) {
         str =>
           val s: String = s"""$leftFrame$str$rightFrame""".stripMargin
           s.framedBy(leftFrame, rightFrame)
@@ -44,7 +46,7 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
     "123456".framedBy("1234567") shouldBe false
     "123456".framedBy("123456", "123456") shouldBe false
-    "123456".framedBy("123", "456") shouldBe true
+    "123456".framedBy("123", "456") shouldBe false
     "123456".framedBy("123", "3456") shouldBe false
   }
 
@@ -76,7 +78,6 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
           str.withoutFrame(frame).isDefined
       }
     }
-
 
   }
 
