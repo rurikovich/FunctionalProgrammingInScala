@@ -14,7 +14,7 @@ case class StrHelper(str: String) {
         val lFrameLength = leftFrame.length
         val rFrameLength = rightFrame.length
         val strWithoutFrame = s.substring(lFrameLength, s.length - rFrameLength)
-        strWithoutFrame.split(delimeter).map(_.strip).toList
+        strWithoutFrame.strip().split(delimeter).map(_.strip).toList.filter(_.nonEmpty)
     }
 
   }

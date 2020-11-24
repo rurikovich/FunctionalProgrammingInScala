@@ -214,7 +214,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   }
 
-  "JObjectParser" should "parse empty json  correctly" ignore {
+  "JObjectParser" should "parse empty json  correctly" in {
     import parsers._
     val json =
       """
