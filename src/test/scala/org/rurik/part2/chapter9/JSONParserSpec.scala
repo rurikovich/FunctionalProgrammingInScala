@@ -226,7 +226,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   }
 
-  "JArrayParser" should "parse empty array  correctly" ignore {
+  "JArrayParser" should "parse empty array  correctly" in  {
     import parsers._
     val json = "[]"
     JArrayParser.run(json) shouldEqual Right(JArray(IndexedSeq.empty))
