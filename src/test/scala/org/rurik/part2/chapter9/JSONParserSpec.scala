@@ -1,7 +1,7 @@
 package org.rurik.part2.chapter9
 
 import org.rurik.part2.chapter9.json.{JSON, JsonParser, JsonParsers}
-import org.rurik.part2.chapter9.json.JSON.{JArray, JBool, JNull, JNumber, JString}
+import org.rurik.part2.chapter9.json.JSON.{JArray, JBool, JNull, JNumber, JObject, JString}
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -92,7 +92,6 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   private def checkJArray[A](constValueToGen: A, constValueToCheck: A, fn: A => JSON): Any = {
     import parsers._
-
     val arrGen: Gen[List[A]] = Gen.listOf[A](Gen.const(constValueToGen))
     check {
       forAll(arrGen) {
@@ -103,4 +102,36 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
       }
     }
   }
+
+  "JObjectParser" should "parse simple json correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1
+        |}
+        |""".stripMargin
+    JObjectParser.run(json) shouldEqual Right(JObject(Map("name1" -> JNumber(1))))
+  }
+
+  "JObjectParser" should "parse json with array correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":[true,false,true],
+        |"name3":"aaa"
+        |}
+        |""".stripMargin
+
+    JObjectParser.run(json) shouldEqual Right(JObject(Map(
+      "name1" -> JNumber(1),
+      "name2" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
+      "name3" -> JString("aaa"),
+    )))
+
+  }
+
+
 }

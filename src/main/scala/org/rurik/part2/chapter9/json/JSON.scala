@@ -29,6 +29,7 @@ object JSON {
 class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   import StrHelper._
+  import BoolHelper._
 
   implicit def toJArrayParser(p: JsonParser[List[JSON]]): JsonParser[JSON] = p.map(l => JArray(l.toIndexedSeq))
 
@@ -61,7 +62,10 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   val JNumberParser: JsonParser[JSON] = JsonParser[JSON] {
     s =>
-      Try(s.toDouble).toEither.map(JNumber)
+      val tryDouble = Try(s.toDouble).map(JNumber)
+      val tryFloat = Try(s.toFloat).map(f => JNumber(f.toDouble))
+      val tryInt = Try(s.toInt).map(i => JNumber(i.toDouble))
+      tryDouble.orElse(tryFloat).orElse(tryInt).toEither
   }
 
   val JStringParser: JsonParser[JSON] = JsonParser[JSON] {
@@ -99,18 +103,24 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   val JObjectParser: JsonParser[JSON] = JsonParser[JSON](
     s => {
-      val map: Map[String, JSON] = s.withoutFrameAndDelimeters("{", "}", ",").map {
-        elements: List[String] =>
-          elements.map {
-            el =>
-              val (name: String, value: String) = el.split(":")
-              (name, AllJsonParser.run(value).getOrElse(JNull))
-          }.toMap
-      }.getOrElse(Map.empty)
+      val left = new Exception("JObject parse Error")
 
-      Right(JObject(map))
+      val map: Either[Throwable, Map[String, JSON]] =
+        s.withoutFrameAndDelimeters("{", "}", ",").map {
+          elements: List[String] =>
+            elements.flatMap {
+              el =>
+                val strArr = el.split(":")
+                (strArr.length == 2).toOpt().map {
+                  _ =>
+                    val (name: String, value: String) = (strArr(0).withoutQuotes, strArr(1))
+                    (name, AllJsonParser.run(value).getOrElse(JNull))
+                }
+            }.toMap
+        }.toRight(left)
+
+      map.map(JObject)
     }
-
   )
 
 

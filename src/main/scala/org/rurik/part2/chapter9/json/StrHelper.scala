@@ -1,29 +1,28 @@
 package org.rurik.part2.chapter9.json
 
-import org.rurik.part2.chapter9.json.BoolHelper.boolToOpt
 import org.rurik.part2.chapter9.json.StrHelper.{quote, strToStrHelper}
-
-
-object BoolHelper {
-  def boolToOpt(b: Boolean): Option[Boolean] = if (b) Some(b) else None
-}
+import BoolHelper._
 
 case class StrHelper(str: String) {
 
-  def withoutQuotes(): String = str.substring(1, str.length - 1)
+  def withoutQuotes(): String = str.strip().substring(1, str.length - 1)
 
-  def withoutFrameAndDelimeters(leftFrame: String, rightFrame: String, delimeter: String): Option[List[String]] = boolToOpt(str.framedBy(leftFrame, rightFrame)).map {
-    _ =>
-      val lFrameLength = leftFrame.length
-      val rFrameLength = rightFrame.length
-      val strWithoutFrame = str.substring(lFrameLength, str.length - rFrameLength)
-      strWithoutFrame.split(delimeter).toList
+  def withoutFrameAndDelimeters(leftFrame: String, rightFrame: String, delimeter: String): Option[List[String]] = {
+    val s = str.strip()
+    s.framedBy(leftFrame, rightFrame).toOpt().map {
+      _ =>
+        val lFrameLength = leftFrame.length
+        val rFrameLength = rightFrame.length
+        val strWithoutFrame = s.substring(lFrameLength, s.length - rFrameLength)
+        strWithoutFrame.split(delimeter).map(_.strip).toList
+    }
+
   }
 
-  def withoutFrame(frame: String): Option[String] = boolToOpt(str.framedBy(frame)).map {
+  def withoutFrame(frame: String): Option[String] = str.framedBy(frame).toOpt().map {
     _ =>
       val frameLength = frame.length
-      str.substring(frameLength, str.length - frameLength)
+      str.strip().substring(frameLength, str.length - frameLength)
   }
 
   /*
@@ -31,12 +30,12 @@ case class StrHelper(str: String) {
    */
   def framedBy(leftFrame: String, rightFrame: String): Boolean = {
     val oneChar = 1
-    str.startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length + oneChar <= str.length )
+    str.strip().startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length + oneChar <= str.length)
   }
 
   def framedBy(frame: String): Boolean = framedBy(frame, frame)
 
-  def quoted: String =s"""$quote$str$quote""".stripMargin
+  def quoted: String = s"""$quote$str$quote""".stripMargin
 
 }
 
