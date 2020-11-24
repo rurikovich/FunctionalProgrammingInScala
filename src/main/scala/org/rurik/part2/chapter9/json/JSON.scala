@@ -79,23 +79,18 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   val JArrayParser: JsonParser[JSON] = JsonParser[JSON] {
     s => {
-      val value: List[Either[Throwable, JSON]] =
-        s.withoutFrameAndDelimeters("[", "]", ",").map {
-          list: List[String] =>
-            list.map {
-              s =>
-                val value1: Either[Throwable, JSON] = AllJsonParser.run(s)
-                value1
-            }
-        }.toList.flatten
+      val elements: List[Either[Throwable, JSON]] =
+        s.withoutFrameAndDelimeters("[", "]", ",").toList.flatMap {
+          _.map(s => AllJsonParser.run(s))
+        }
 
-      val start: Either[Throwable, List[JSON]] = Right(List.empty[JSON])
-      value.foldLeft(start) {
-        (acc: Either[Throwable, List[JSON]], v: Either[Throwable, JSON]) =>
+      val startAcc: Either[Throwable, List[JSON]] = Right(List.empty[JSON])
+      elements.foldLeft(startAcc) {
+        (acc: Either[Throwable, List[JSON]], value: Either[Throwable, JSON]) =>
           for {
             list <- acc
-            vv <- v
-          } yield vv :: list
+            v <- value
+          } yield v :: list
 
       }.map(l => JArray(l.toIndexedSeq))
 
