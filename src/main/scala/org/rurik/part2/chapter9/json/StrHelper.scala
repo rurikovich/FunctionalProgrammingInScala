@@ -19,7 +19,7 @@ case class StrHelper(str: String) {
 
   }
 
-  def withoutFrame(frame: String): Option[String] = str.framedBy(frame).toOpt().map {
+  def withoutFrame(frame: String): Option[String] = str.nonEmptyFramedBy(frame).toOpt().map {
     _ =>
       val frameLength = frame.length
       str.strip().substring(frameLength, str.length - frameLength)
@@ -28,12 +28,20 @@ case class StrHelper(str: String) {
   /*
     после вычитания рамок из строки должен оставаться хотя бы 1 символ
    */
-  def framedBy(leftFrame: String, rightFrame: String): Boolean = {
+  def nonEmptyFramedBy(leftFrame: String, rightFrame: String): Boolean = {
     val oneChar = 1
     str.strip().startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length + oneChar <= str.length)
   }
 
-  def framedBy(frame: String): Boolean = framedBy(frame, frame)
+  def nonEmptyFramedBy(frame: String): Boolean = nonEmptyFramedBy(frame, frame)
+
+
+  def framedBy(leftFrame: String, rightFrame: String): Boolean = {
+    str.strip().startsWith(leftFrame) && str.endsWith(rightFrame) && (leftFrame.length + rightFrame.length <= str.length)
+  }
+
+  def framedBy(frame: String): Boolean = nonEmptyFramedBy(frame, frame)
+
 
   def quoted: String = s"""$quote$str$quote""".stripMargin
 

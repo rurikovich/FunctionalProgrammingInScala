@@ -29,7 +29,7 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
     check {
       forAll(nonEmptyStrGen) {
         str =>
-          str.quoted.framedBy(quote)
+          str.quoted.nonEmptyFramedBy(quote)
       }
     }
 
@@ -39,15 +39,15 @@ class StrHelperSpec extends AnyFlatSpec with Checkers with should.Matchers {
       forAll(nonEmptyStrGen) {
         str =>
           val s: String = s"""$leftFrame$str$rightFrame""".stripMargin
-          s.framedBy(leftFrame, rightFrame)
+          s.nonEmptyFramedBy(leftFrame, rightFrame)
       }
     }
 
 
-    "123456".framedBy("1234567") shouldBe false
-    "123456".framedBy("123456", "123456") shouldBe false
-    "123456".framedBy("123", "456") shouldBe false
-    "123456".framedBy("123", "3456") shouldBe false
+    "123456".nonEmptyFramedBy("1234567") shouldBe false
+    "123456".nonEmptyFramedBy("123456", "123456") shouldBe false
+    "123456".nonEmptyFramedBy("123", "456") shouldBe false
+    "123456".nonEmptyFramedBy("123", "3456") shouldBe false
   }
 
   "withoutFrame" should "operate correctly" in {

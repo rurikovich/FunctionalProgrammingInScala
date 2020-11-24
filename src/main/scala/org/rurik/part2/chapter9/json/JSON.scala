@@ -55,12 +55,12 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
 
   override def succeed[A](a: A): JsonParser[A] = JsonParser[A](s => Right(a))
 
-  val JNullParser: JsonParser[JSON] = JsonParser[JSON] {
+  def JNullParser: JsonParser[JSON] = JsonParser[JSON] {
     s =>
-      if (s == "null") Right(JNull) else Left(new Exception(error("JNull")))
+      if (s.isEmpty || s == "null") Right(JNull) else Left(new Exception(error("JNull")))
   }
 
-  val JNumberParser: JsonParser[JSON] = JsonParser[JSON] {
+  def JNumberParser: JsonParser[JSON] = JsonParser[JSON] {
     s =>
       val tryDouble = Try(s.toDouble).map(JNumber)
       val tryFloat = Try(s.toFloat).map(f => JNumber(f.toDouble))
@@ -68,7 +68,7 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
       tryDouble.orElse(tryFloat).orElse(tryInt).toEither
   }
 
-  val JStringParser: JsonParser[JSON] = JsonParser[JSON] {
+  def JStringParser: JsonParser[JSON] = JsonParser[JSON] {
     s =>
       s.withoutFrame(quote) match {
         case Some(str) => Right(JString(str))
@@ -76,32 +76,43 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
       }
   }
 
-  val JBoolParser: JsonParser[JSON] = JsonParser[JSON] {
+  def JBoolParser: JsonParser[JSON] = JsonParser[JSON] {
     s =>
       Try(s.toBoolean).toEither.map(JBool)
   }
 
-  val JArrayParser: JsonParser[JSON] = JsonParser[JSON] {
+  def JArrayParser: JsonParser[JSON] = JsonParser[JSON] {
+    val left: Either[Throwable, JSON] = Left(new Exception("JArray parse Error"))
+
     s => {
-      val elements: List[Either[Throwable, JSON]] =
-        s.withoutFrameAndDelimeters("[", "]", ",").toList.flatMap {
-          _.map(s => AllJsonParser.run(s))
+      val elementsOpt: Option[List[Either[Throwable, JSON]]] =
+        s.withoutFrameAndDelimeters("[", "]", ",").map {
+          elements: List[String] =>
+            elements.map(s => AllJsonParser.run(s))
         }
 
-      val startAcc: Either[Throwable, List[JSON]] = Right(List.empty[JSON])
-      elements.foldLeft(startAcc) {
-        (acc: Either[Throwable, List[JSON]], value: Either[Throwable, JSON]) =>
-          for {
-            list <- acc
-            v <- value
-          } yield v :: list
+      val option: Option[Either[Throwable, List[JSON]]] = elementsOpt.map {
+        elements =>
+          val startAcc: Either[Throwable, List[JSON]] = Right(List.empty[JSON])
+          elements.foldLeft(startAcc) {
+            (acc: Either[Throwable, List[JSON]], value: Either[Throwable, JSON]) =>
+              for {
+                list <- acc
+                v <- value
+              } yield list ++ List(v)
 
-      }.map(l => JArray(l.toIndexedSeq))
+          }
+      }
+
+      option match {
+        case Some(either) => either.map(l => JArray(l.toIndexedSeq))
+        case None => left
+      }
 
     }
   }
 
-  val JObjectParser: JsonParser[JSON] = JsonParser[JSON](
+  def JObjectParser: JsonParser[JSON] = JsonParser[JSON](
     s => {
       val left = new Exception("JObject parse Error")
 
@@ -111,12 +122,14 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
             val elems = accumulateTokensInJson(elements)
             elems.flatMap {
               el =>
-                val strArr = el.split(":")
-                (strArr.length == 2).toOpt().map {
-                  _ =>
-                    val (name: String, value: String) = (strArr(0).withoutQuotes, strArr(1))
-                    (name, AllJsonParser.run(value).getOrElse(JNull))
+                val strArr = el.split(":").toList
+                strArr.headOption.map {
+                  head =>
+                    val (name: String, value: String) = (head.withoutQuotes(), strArr.tail.mkString(":"))
+                    val innerResult: Either[Throwable, JSON] = AllJsonParser.run(value)
+                    (name, innerResult.getOrElse(JNull))
                 }
+
             }.toMap
         }.toRight(left)
 
@@ -125,7 +138,7 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   )
 
 
-  val AllJsonParser: JsonParser[JSON] = {
+  def AllJsonParser: JsonParser[JSON] = {
     JNullParser or
       JNumberParser or
       JStringParser or

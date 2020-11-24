@@ -92,7 +92,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   private def checkJArray[A](constValueToGen: A, constValueToCheck: A, fn: A => JSON): Any = {
     import parsers._
-    val arrGen: Gen[List[A]] = Gen.listOf[A](Gen.const(constValueToGen))
+    val arrGen: Gen[List[A]] = Gen.nonEmptyListOf[A](Gen.const(constValueToGen))
     check {
       forAll(arrGen) {
         list =>
@@ -125,13 +125,111 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
         |}
         |""".stripMargin
 
-    val value1 = JObjectParser.run(json)
-    value1 shouldEqual Right(JObject(Map(
+    JObjectParser.run(json) shouldEqual Right(JObject(Map(
       "name1" -> JNumber(1),
       "name2" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
       "name3" -> JString("aaa"),
     )))
 
+  }
+
+  "JObjectParser" should "parse json with inner jObject correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":{
+        |"name21":1,
+        |"name22":true
+        |},
+        |"name3":"aaa"
+        |}
+        |""".stripMargin
+
+    val value1 = JObjectParser.run(json)
+    value1 shouldEqual Right(JObject(Map(
+      "name1" -> JNumber(1),
+      "name2" -> JObject(Map(
+        "name21" -> JNumber(1),
+        "name22" -> JBool(true),
+      )),
+      "name3" -> JString("aaa"),
+    )))
+
+  }
+
+  "JObjectParser" should "parse json with inner inner jObject  and array correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":{
+        |"name21":{
+        |"name211":111
+        |},
+        |"name22":[true,false,true],
+        |},
+        |"name3":"aaa"
+        |}
+        |""".stripMargin
+
+    val value1 = JObjectParser.run(json)
+    value1 shouldEqual Right(JObject(Map(
+      "name1" -> JNumber(1),
+      "name2" -> JObject(Map(
+        "name21" -> JObject(Map("name211" -> JNumber(111))),
+        "name22" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
+      )),
+      "name3" -> JString("aaa"),
+    )))
+
+  }
+
+
+  "JArrayParser" should "parse array of jObjects correctly" in {
+    import parsers._
+    val json =
+      """
+        [
+        |{
+        |"name1":1
+        |},
+        |{
+        |"name2":2
+        |},
+        |{
+        |"name3":3
+        |}
+        |]
+        |""".stripMargin
+
+    val res = JArrayParser.run(json)
+    res shouldEqual Right(JArray(IndexedSeq(
+      JObject(Map("name1" -> JNumber(1))),
+      JObject(Map("name2" -> JNumber(2))),
+      JObject(Map("name3" -> JNumber(3)))
+    )))
+
+  }
+
+  "JObjectParser" should "parse empty json  correctly" ignore {
+    import parsers._
+    val json =
+      """
+        |{
+        |}
+        |""".stripMargin
+
+    JObjectParser.run(json) shouldEqual Right(JObject(Map.empty))
+
+  }
+
+  "JArrayParser" should "parse empty array  correctly" ignore {
+    import parsers._
+    val json = "[]"
+    JArrayParser.run(json) shouldEqual Right(JArray(IndexedSeq.empty))
   }
 
 
