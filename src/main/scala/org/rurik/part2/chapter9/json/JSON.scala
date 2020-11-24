@@ -98,8 +98,19 @@ class JsonParsers extends Parsers[Throwable, JsonParser] {
   }
 
   val JObjectParser: JsonParser[JSON] = JsonParser[JSON](
-    s =>
-      Right(JObject(Map.empty))
+    s => {
+      val map: Map[String, JSON] = s.withoutFrameAndDelimeters("{", "}", ",").map {
+        elements: List[String] =>
+          elements.map {
+            el =>
+              val (name: String, value: String) = el.split(":")
+              (name, AllJsonParser.run(value).getOrElse(JNull))
+          }.toMap
+      }.getOrElse(Map.empty)
+
+      Right(JObject(map))
+    }
+
   )
 
 
