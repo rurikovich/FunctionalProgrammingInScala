@@ -1,11 +1,10 @@
 package org.rurik.part2.chapter9.v2
 
-import org.rurik.part2.chapter9.helpers.StrHelper.quote
 import org.rurik.part2.chapter9.json.JSON
-import org.rurik.part2.chapter9.json.JSON.{JBool, JNull, JNumber, JString}
+import org.rurik.part2.chapter9.json.JSON.{JArray, JBool, JNull, JNumber, JString}
 import org.rurik.part2.chapter9.v2.JsonParsersV2.JsonParser
 import org.rurik.part2.chapter9.v2.RegexPatterns._
-import org.rurik.part2.chapter9.v2.parsers.{Failure, Location, ParseError, ParsersV2, Result, Success}
+import org.rurik.part2.chapter9.v2.parsers._
 
 import scala.util.matching.Regex
 
@@ -27,13 +26,13 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
       val msg = "regex " + r
       val strToInspect = loc.input.substring(loc.offset)
       r.findPrefixMatchOf(strToInspect) match {
-        case None => Failure(loc.toError(msg))
+        case None =>
+          Failure(loc.toError(msg))
         case Some(m: Regex.Match) =>
-          val matchedStr = m.source.toString
+          val matchedStr = m.toString
           Success(matchedStr, matchedStr.length)
       }
     }
-
 
   def slice[A](p: JsonParser[A]): JsonParser[String] =
     loc =>
@@ -68,7 +67,6 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
 
   def succeed[A](a: A): JsonParser[A] = _ => Success(a, 0)
 
-
   def JNullParser: JsonParser[JSON] = string("null").map(_ => JNull)
 
   def JNumberParser: JsonParser[JSON] = regex(numberPattern).map(n => JNumber(n.toDouble))
@@ -77,12 +75,11 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
 
   def JBoolParser: JsonParser[JSON] = ("true" or "false").map(_.toBoolean).map(JBool)
 
-  def JArrayParser: JsonParser[JSON] = ???
+  def JArrayParser: JsonParser[JSON] = ("[" *> (literal sep ",") <* "]").map(list => JArray(list.toIndexedSeq))
 
   def JObjectParser: JsonParser[JSON] = ???
 
-
-  def AllJsonParser: JsonParser[JSON] = {
+  def allParsers: JsonParser[JSON] = {
     JNullParser or
       JNumberParser or
       JStringParser or
@@ -90,6 +87,15 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
       JArrayParser or
       JObjectParser
   }
+
+  def literal: JsonParser[JSON] =
+    JNullParser or
+      JNumberParser or
+      JStringParser or
+      JBoolParser
+//  or
+//      JObjectParser
+
 
 }
 

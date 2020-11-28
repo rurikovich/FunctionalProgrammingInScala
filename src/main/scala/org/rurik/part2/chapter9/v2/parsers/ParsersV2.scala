@@ -75,6 +75,14 @@ trait ParsersV2[Parser[+_]] {
   def skipR[A](p: Parser[A], p2: => Parser[Any]): Parser[A] =
     map2(p, slice(p2))((a, _) => a)
 
+  /** Zero or more repetitions of `p`, separated by `p2`, whose results are ignored. */
+  def sep[A](p: Parser[A], p2: Parser[Any]): Parser[List[A]] = // use `Parser[Any]` since don't care about result type of separator
+    sep1(p,p2) or succeed(List())
+
+  /** One or more repetitions of `p`, separated by `p2`, whose results are ignored. */
+  def sep1[A](p: Parser[A], p2: Parser[Any]): Parser[List[A]] =
+    map2(p, many(p2 *> p))(_ :: _)
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -97,6 +105,10 @@ trait ParsersV2[Parser[+_]] {
     def *>[B](p2: => Parser[B]): Parser[B] = self.skipL(p, p2)
 
     def <*[B](p2: => Parser[B]): Parser[A] = self.skipR(p, p2)
+
+    def sep(separator: Parser[Any]): Parser[List[A]] = self.sep(p, separator)
+
+    def sep1(separator: Parser[Any]): Parser[List[A]] = self.sep1(p, separator)
 
   }
 
