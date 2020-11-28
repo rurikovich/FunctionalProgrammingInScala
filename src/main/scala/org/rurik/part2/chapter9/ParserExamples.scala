@@ -1,6 +1,7 @@
 package org.rurik.part2.chapter9
 
 import org.rurik.part2.chapter9.ParserExamples.{ExampleParseError, ExampleParser}
+import org.rurik.part2.chapter9.v1.Parsers
 
 trait ParserExamples extends Parsers[ExampleParseError, ExampleParser] {
 

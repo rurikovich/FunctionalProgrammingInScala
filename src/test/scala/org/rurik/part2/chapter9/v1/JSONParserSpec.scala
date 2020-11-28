@@ -1,7 +1,7 @@
-package org.rurik.part2.chapter9
+package org.rurik.part2.chapter9.v1
 
-import org.rurik.part2.chapter9.json.{JSON, JsonParser, JsonParsers}
-import org.rurik.part2.chapter9.json.JSON.{JArray, JBool, JNull, JNumber, JObject, JString}
+import org.rurik.part2.chapter9.json.JSON
+import org.rurik.part2.chapter9.json.JSON._
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec

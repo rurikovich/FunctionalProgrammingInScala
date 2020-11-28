@@ -1,31 +1,47 @@
-package org.rurik.part2.chapter9
+package org.rurik.part2.chapter9.v2.parsers
 
 import org.rurik.part2.chapter8.Prop.forAll
 import org.rurik.part2.chapter8.{Gen, Prop}
 
 import scala.util.matching.Regex
 
-trait Parsers[ParseError, Parser[+_]] {
-  self =>
 
-  implicit def string(s: String): Parser[String]
+trait ParsersV2[Parser[+_]] {
+  self =>
 
   implicit def operators[A](p: Parser[A]): ParserOps[A] = ParserOps[A](p)
 
   implicit def asStringParser[A](a: A)(implicit f: A => Parser[String]): ParserOps[String] = ParserOps(f(a))
 
+
+  //--------------------- set of primitives ---------------------------
+  implicit def string(s: String): Parser[String]
+
   implicit def regex(r: Regex): Parser[String]
 
+  /*
+  осушествляет только подсчет кол-ва симовлов, обработанных парсером, НО не вычисляет результат работы парсера
+   */
+  def slice[A](p: Parser[A]): Parser[String]
 
-  def run[A](p: Parser[A])(input: String): Either[ParseError, A]
+  def label[A](msg: String)(p: Parser[A]): Parser[A]
 
-  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A]
+  def scope[A](msg: String)(p: Parser[A]): Parser[A]
 
   def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
-  def slice[A](p: Parser[A]): Parser[String]
+  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A]
+
+  //--------------------- set of primitives ---------------------------
+
+  def run[A](p: Parser[A])(input: String): Either[ParseError, A]
 
   def succeed[A](a: A): Parser[A]
+
+//  def errorLocation(e: ParseError): Location
+//
+//  def errorMessage(e: ParseError): String
+
 
   def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _) or succeed(List())
 
@@ -53,9 +69,6 @@ trait Parsers[ParseError, Parser[+_]] {
       b <- p2
     } yield (a, b)
 
-  def parseIntFollowedByChars[A](p: Parser[Int], c: Char): Parser[List[Char]] = {
-    p.flatMap(n => listOfN(n, char(c)))
-  }
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -93,7 +106,11 @@ trait Parsers[ParseError, Parser[+_]] {
         run(parserBA)(s) == run(p)(s).map(a => (b, a))
     }
 
-
   }
 
 }
+
+
+
+
+
