@@ -11,7 +11,7 @@ case class StrHelper(str: String) {
 
   def withoutFrameAndDelimeters(leftFrame: String, rightFrame: String, delimeter: String): Option[List[String]] = {
     val s = str.strip()
-    s.framedBy(leftFrame, rightFrame).toOpt().map {
+    s.framedBy(leftFrame, rightFrame).toOpt.map {
       _ =>
         val lFrameLength = leftFrame.length
         val rFrameLength = rightFrame.length
@@ -44,9 +44,7 @@ case class StrHelper(str: String) {
 
   def framedBy(frame: String): Boolean = nonEmptyFramedBy(frame, frame)
 
-
   def quoted: String = s"""$quote$str$quote""".stripMargin
-
 
 }
 

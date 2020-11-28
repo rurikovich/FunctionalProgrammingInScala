@@ -34,14 +34,9 @@ trait ParsersV2[Parser[+_]] {
 
   //--------------------- set of primitives ---------------------------
 
-  def run[A](p: Parser[A])(input: String): Either[ParseError, A]
+  def run[A](p: Parser[A])(input: String): Result[A]
 
   def succeed[A](a: A): Parser[A]
-
-//  def errorLocation(e: ParseError): Location
-//
-//  def errorMessage(e: ParseError): String
-
 
   def many[A](p: Parser[A]): Parser[List[A]] = map2(p, many(p))(_ :: _) or succeed(List())
 
@@ -70,6 +65,16 @@ trait ParsersV2[Parser[+_]] {
     } yield (a, b)
 
 
+  /** Sequences two parsers, ignoring the result of the first.
+   * We wrap the ignored half in slice, since we don't care about its result. */
+  def skipL[B](p: Parser[Any], p2: => Parser[B]): Parser[B] =
+    map2(slice(p), p2)((_, b) => b)
+
+  /** Sequences two parsers, ignoring the result of the second.
+   * We wrap the ignored half in slice, since we don't care about its result. */
+  def skipR[A](p: Parser[A], p2: => Parser[Any]): Parser[A] =
+    map2(p, slice(p2))((a, b) => a)
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -87,8 +92,11 @@ trait ParsersV2[Parser[+_]] {
 
     def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
 
-    def run(input: String): Either[ParseError, A] = self.run(p)(input)
+    def run(input: String): Result[A] = self.run(p)(input)
 
+    def *>[B](p2: => Parser[B]): Parser[B] = self.skipL(p, p2)
+
+    def <*[B](p2: => Parser[B]): Parser[A] = self.skipR(p, p2)
 
   }
 
@@ -100,10 +108,17 @@ trait ParsersV2[Parser[+_]] {
       equal(p, p.map(a => a))(in)
 
 
-    def productLaw[A, B](p: Parser[A])(in: Gen[(B, String)]): Prop = forAll(in) {
-      case (b, s) =>
-        val parserBA = succeed(b) ** p
-        run(parserBA)(s) == run(p)(s).map(a => (b, a))
+    def productLaw[A, B](p: Parser[A])(in: Gen[(B, String)]): Prop = {
+      implicit def toEither[C](r: Result[C]): Either[ParseError, C] = r match {
+        case Success(a: C, _) => Right(a)
+        case Failure(e) => Left(e)
+      }
+
+      forAll(in) {
+        case (b, s) =>
+          val parserBA = succeed(b) ** p
+          toEither(run(parserBA)(s)) == run(p)(s).map(a => (b, a))
+      }
     }
 
   }

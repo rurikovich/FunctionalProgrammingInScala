@@ -1,15 +1,17 @@
 package org.rurik.part2.chapter9.v2
 
+import org.rurik.part2.chapter9.helpers.StrHelper.quote
 import org.rurik.part2.chapter9.json.JSON
-import org.rurik.part2.chapter9.json.JSON.JNull
+import org.rurik.part2.chapter9.json.JSON.{JBool, JNull, JNumber, JString}
 import org.rurik.part2.chapter9.v2.JsonParsersV2.JsonParser
-import org.rurik.part2.chapter9.v2.parsers.{Location, ParseError, ParsersV2}
+import org.rurik.part2.chapter9.v2.RegexPatterns._
+import org.rurik.part2.chapter9.v2.parsers.{Failure, Location, ParseError, ParsersV2, Result, Success}
 
 import scala.util.matching.Regex
 
 class JsonParsersV2 extends ParsersV2[JsonParser] {
 
-  override implicit def string(s: String): JsonParser[String] =
+  implicit def string(s: String): JsonParser[String] =
     (loc) => {
       val strToInspect = loc.input.substring(loc.offset)
       if (strToInspect.startsWith(s))
@@ -18,9 +20,24 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
         Failure(Location(loc.input, loc.offset).toError("Expected: " + s))
     }
 
-  override implicit def regex(r: Regex): JsonParser[String] = ???
+  implicit def regex(r: Regex): JsonParser[String] =
+    loc => {
+      val msg = "regex " + r
+      val strToInspect = loc.input.substring(loc.offset)
+      r.findPrefixMatchOf(strToInspect) match {
+        case None => Failure(loc.toError(msg))
+        case Some(m: Regex.Match) =>
+          val matchedStr = m.source.toString
+          Success(matchedStr, matchedStr.length)
+      }
+    }
 
-  override def slice[A](p: JsonParser[A]): JsonParser[String] = ???
+
+  def slice[A](p: JsonParser[A]): JsonParser[String] =
+    loc => p(loc) match {
+      case Success(_, n) => Success(loc.input.substring(loc.offset, loc.offset + n), n)
+      case f@Failure(_) => f
+    }
 
   def label[A](msg: String)(p: JsonParser[A]): JsonParser[A] = loc => p(loc).mapError(_.label(msg))
 
@@ -38,20 +55,18 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
       case r => r
     }
 
-  override def run[A](p: JsonParser[A])(input: String): Either[ParseError, A] = ???
+  def run[A](p: JsonParser[A])(input: String): Result[A] = p(Location(input))
 
-  override def succeed[A](a: A): JsonParser[A] = ???
+  def succeed[A](a: A): JsonParser[A] = _ => Success(a, 0)
 
 
-  def JNullParser: JsonParser[JSON] =
-    loc =>
-      Success(JNull, 0)
+  def JNullParser: JsonParser[JSON] = string("null").map(_ => JNull)
 
-  def JNumberParser: JsonParser[JSON] = ???
+  def JNumberParser: JsonParser[JSON] = regex(numberPattern).map(n => JNumber(n.toDouble))
 
-  def JStringParser: JsonParser[JSON] = ???
+  def JStringParser: JsonParser[JSON] = (quote *> regex(stringPattern) <* quote).map(JString)
 
-  def JBoolParser: JsonParser[JSON] = ???
+  def JBoolParser: JsonParser[JSON] = ("true" or "false").map(_.toBoolean).map(JBool)
 
   def JArrayParser: JsonParser[JSON] = ???
 

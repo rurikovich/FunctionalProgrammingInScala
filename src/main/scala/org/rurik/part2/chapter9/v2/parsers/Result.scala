@@ -1,6 +1,4 @@
-package org.rurik.part2.chapter9.v2
-
-import org.rurik.part2.chapter9.v2.parsers.ParseError
+package org.rurik.part2.chapter9.v2.parsers
 
 sealed trait Result[+A] {
 
