@@ -52,17 +52,17 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
 
   "JStringParser" should "parse any quoted string to string correctly" in {
 
-    val str1=""
-    JStringParser.run(str1.quoted) shouldEqual Success(JString(str1), str1.quoted.length)
+    val str1 = ""
+    val quotedStr1 = str1.quoted
+    JStringParser.run(quotedStr1) shouldEqual Success(JString(str1), quotedStr1.length)
 
-
-//    val strGen = Gen.stringOfN(10, Gen.alphaLowerChar)
-//    check {
-//      forAll(strGen) {
-//        str =>
-//          JStringParser.run(str.quoted) == Success(JString(str), str.quoted.length)
-//      }
-//    }
+    val strGen = Gen.stringOfN(10, Gen.alphaLowerChar)
+    check {
+      forAll(strGen) {
+        str =>
+          JStringParser.run(str.quoted) == Success(JString(str), str.quoted.length)
+      }
+    }
   }
 
   "JBoolParser" should "parse true\\false to Boolean correctly" in {
@@ -70,7 +70,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
     check {
       forAll(boolGen) {
         bool =>
-          parsers.JBoolParser.run(s"$bool") == Right(JBool(bool))
+          JBoolParser.run(s"$bool") == Success(JBool(bool), bool.toString.length)
       }
     }
   }

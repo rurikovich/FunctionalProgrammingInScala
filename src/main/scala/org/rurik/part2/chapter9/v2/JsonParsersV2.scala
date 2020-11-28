@@ -11,6 +11,8 @@ import scala.util.matching.Regex
 
 class JsonParsersV2 extends ParsersV2[JsonParser] {
 
+  import org.rurik.part2.chapter9.helpers.StrHelper._
+
   implicit def string(s: String): JsonParser[String] =
     (loc) => {
       val strToInspect = loc.input.substring(loc.offset)
@@ -34,20 +36,24 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
 
 
   def slice[A](p: JsonParser[A]): JsonParser[String] =
-    loc => p(loc) match {
-      case Success(_, n) => Success(loc.input.substring(loc.offset, loc.offset + n), n)
-      case f@Failure(_) => f
-    }
+    loc =>
+      p(loc) match {
+        case Success(_, n) =>
+          val newStr = loc.input.substring(loc.offset, loc.offset + n)
+          Success(newStr, n)
+        case f@Failure(_) => f
+      }
 
   def label[A](msg: String)(p: JsonParser[A]): JsonParser[A] = loc => p(loc).mapError(_.label(msg))
 
   def scope[A](msg: String)(p: JsonParser[A]): JsonParser[A] = loc => p(loc).mapError(_.push(loc, msg))
 
   def flatMap[A, B](f: JsonParser[A])(g: A => JsonParser[B]): JsonParser[B] =
-    loc => f(loc) match {
-      case Success(a, n) => g(a)(loc.advanceBy(n)).advanceSuccess(n)
-      case e@Failure(_) => e
-    }
+    loc =>
+      f(loc) match {
+        case Success(a, n) => g(a)(loc.advanceBy(n)).advanceSuccess(n)
+        case e@Failure(_) => e
+      }
 
   def or[A](x: JsonParser[A], y: => JsonParser[A]): JsonParser[A] =
     s => x(s) match {
@@ -55,7 +61,10 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
       case r => r
     }
 
-  def run[A](p: JsonParser[A])(input: String): Result[A] = p(Location(input))
+  def run[A](p: JsonParser[A])(input: String): Result[A] = {
+    val location = Location(input)
+    p(location)
+  }
 
   def succeed[A](a: A): JsonParser[A] = _ => Success(a, 0)
 
@@ -64,7 +73,7 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
 
   def JNumberParser: JsonParser[JSON] = regex(numberPattern).map(n => JNumber(n.toDouble))
 
-  def JStringParser: JsonParser[JSON] = (quote *> regex(stringPattern) <* quote).map(JString)
+  def JStringParser: JsonParser[JSON] = regex(stringPattern).map(s => JString(s.withoutQuotes()))
 
   def JBoolParser: JsonParser[JSON] = ("true" or "false").map(_.toBoolean).map(JBool)
 
