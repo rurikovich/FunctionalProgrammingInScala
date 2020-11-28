@@ -10,7 +10,7 @@ import org.scalatestplus.scalacheck.Checkers
 
 class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
-  import org.rurik.part2.chapter9.json.StrHelper._
+  import org.rurik.part2.chapter9.helpers.StrHelper._
 
   val parsers: JsonParsers = new JsonParsers()
 

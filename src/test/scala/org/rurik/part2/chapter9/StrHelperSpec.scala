@@ -1,6 +1,6 @@
 package org.rurik.part2.chapter9
 
-import org.rurik.part2.chapter9.json.StrHelper
+import org.rurik.part2.chapter9.helpers.StrHelper
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec

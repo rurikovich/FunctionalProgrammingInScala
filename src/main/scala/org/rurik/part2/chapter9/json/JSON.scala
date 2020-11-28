@@ -28,8 +28,8 @@ object JSON {
 
 class JsonParsers extends Parsers[Throwable, JsonParser] {
 
-  import StrHelper._
-  import BoolHelper._
+  import org.rurik.part2.chapter9.helpers.StrHelper._
+  import org.rurik.part2.chapter9.helpers.BoolHelper._
 
   implicit def toJArrayParser(p: JsonParser[List[JSON]]): JsonParser[JSON] = p.map(l => JArray(l.toIndexedSeq))
 

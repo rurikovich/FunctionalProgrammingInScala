@@ -1,8 +1,8 @@
-package org.rurik.part2.chapter9.json
+package org.rurik.part2.chapter9.helpers
 
 case class BoolHelper(b: Boolean) {
 
-  def toOpt(): Option[Boolean] = if (b) Some(b) else None
+  def toOpt: Option[Boolean] = if (b) Some(b) else None
 
 }
 

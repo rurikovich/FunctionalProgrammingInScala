@@ -1,9 +1,11 @@
-package org.rurik.part2.chapter9.json
+package org.rurik.part2.chapter9.helpers
 
-import org.rurik.part2.chapter9.json.StrHelper.{quote, strToStrHelper}
+import org.rurik.part2.chapter9.helpers.StrHelper._
+
 import BoolHelper._
 
 case class StrHelper(str: String) {
+
 
   def withoutQuotes(): String = str.strip().substring(1, str.length - 1)
 
@@ -19,7 +21,7 @@ case class StrHelper(str: String) {
 
   }
 
-  def withoutFrame(frame: String): Option[String] = str.nonEmptyFramedBy(frame).toOpt().map {
+  def withoutFrame(frame: String): Option[String] = str.nonEmptyFramedBy(frame).toOpt.map {
     _ =>
       val frameLength = frame.length
       str.strip().substring(frameLength, str.length - frameLength)
