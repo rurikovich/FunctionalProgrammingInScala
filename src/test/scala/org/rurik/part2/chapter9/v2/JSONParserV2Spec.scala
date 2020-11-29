@@ -152,5 +152,112 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
 
   }
 
+  "JSONParserV2: JObjectParser" should "parse json with inner jObject correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":{
+        |"name21":1,
+        |"name22":true
+        |},
+        |"name3":"aaa"
+        |}
+        |""".stripMargin.replace("\n", "")
+
+    val parseResult = JObjectParser.run(json)
+
+    parseResult shouldEqual Success(
+      get = JObject(Map(
+        "name1" -> JNumber(1),
+        "name2" -> JObject(Map(
+          "name21" -> JNumber(1),
+          "name22" -> JBool(true)
+        )),
+        "name3" -> JString("aaa")
+      )),
+      charsConsumed = json.length
+    )
+
+  }
+
+  "JSONParserV2: JObjectParser" should "parse json with inner inner jObject  and array correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":{
+        |"name21":{
+        |"name211":111
+        |},
+        |"name22":[true,false,true]
+        |},
+        |"name3":"aaa"
+        |}
+        |""".stripMargin.replace("\n", "")
+
+    val parseResult = JObjectParser.run(json)
+    parseResult shouldEqual Success(
+      get = JObject(Map(
+        "name1" -> JNumber(1),
+        "name2" -> JObject(Map(
+          "name21" -> JObject(Map("name211" -> JNumber(111))),
+          "name22" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true)))
+        )),
+        "name3" -> JString("aaa")
+      )),
+      charsConsumed = json.length
+    )
+
+  }
+
+  "JSONParserV2: JArrayParser" should "parse array of jObjects correctly" in {
+    import parsers._
+    val json =
+      """
+        |[
+        |{
+        |"name1":1
+        |},
+        |{
+        |"name2":2
+        |},
+        |{
+        |"name3":3
+        |}
+        |]
+        |""".stripMargin.replace("\n", "")
+
+    val parseResult = JArrayParser.run(json)
+    parseResult shouldEqual Success(
+      get = JArray(IndexedSeq(
+        JObject(Map("name1" -> JNumber(1))),
+        JObject(Map("name2" -> JNumber(2))),
+        JObject(Map("name3" -> JNumber(3)))
+      )),
+      charsConsumed = json.length
+    )
+
+  }
+
+  "JSONParserV2: JObjectParser" should "parse empty json  correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |}
+        |""".stripMargin.replace("\n", "")
+
+    val parseResult = JObjectParser.run(json)
+    parseResult shouldEqual Success(JObject(Map.empty), json.length)
+  }
+
+  "JSONParserV2: JArrayParser" should "parse empty array  correctly" in {
+    import parsers._
+    val json = "[]"
+    JArrayParser.run(json) shouldEqual Success(JArray(IndexedSeq.empty), json.length)
+  }
 
 }
