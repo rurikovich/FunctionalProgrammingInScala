@@ -6,7 +6,7 @@ object RegexPatterns {
 
   val numberPattern: Regex = "^[0-9]+(\\.[0-9]+)?".r
 
-  val stringPattern: Regex = "^\\\"[a-z,A-Z]*\\\"".r
+  val stringPattern: Regex = "^\\\"[a-z,A-Z,0-9]*\\\"".r
 
 
 }

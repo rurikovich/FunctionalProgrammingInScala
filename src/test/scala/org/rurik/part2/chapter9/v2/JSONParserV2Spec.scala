@@ -117,4 +117,23 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
     }
   }
 
+
+  "JObjectParser" should "parse simple json correctly" in {
+    import parsers._
+
+    val propName = "name1".quoted
+    val json = s"{$propName:1}"
+
+//    val json =
+//      """
+//        |{
+//        |"name1":1
+//        |}
+//        |""".stripMargin
+
+    val value1 = JObjectParser.run(json)
+    value1 shouldEqual Success(JObject(Map("name1" -> JNumber(1))), json.length)
+  }
+
+
 }
