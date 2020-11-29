@@ -152,7 +152,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
       "name1" -> JNumber(1),
       "name2" -> JObject(Map(
         "name21" -> JNumber(1),
-        "name22" -> JBool(true),
+        "name22" -> JBool(true)
       )),
       "name3" -> JString("aaa"),
     )))
@@ -180,7 +180,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
       "name1" -> JNumber(1),
       "name2" -> JObject(Map(
         "name21" -> JObject(Map("name211" -> JNumber(111))),
-        "name22" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
+        "name22" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true)))
       )),
       "name3" -> JString("aaa"),
     )))
@@ -226,7 +226,7 @@ class JSONParserSpec extends AnyFlatSpec with Checkers with should.Matchers {
 
   }
 
-  "JArrayParser" should "parse empty array  correctly" in  {
+  "JArrayParser" should "parse empty array  correctly" in {
     import parsers._
     val json = "[]"
     JArrayParser.run(json) shouldEqual Right(JArray(IndexedSeq.empty))

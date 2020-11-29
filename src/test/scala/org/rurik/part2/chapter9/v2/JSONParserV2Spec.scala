@@ -102,7 +102,6 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
 
   }
 
-
   private def checkJArray[A](constValueToGen: A, constValueToCheck: A, fn: A => JSON): Any = {
     import parsers._
     val arrGen: Gen[List[A]] = Gen.nonEmptyListOf[A](Gen.const(constValueToGen))
@@ -117,22 +116,40 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
     }
   }
 
-
-  "JObjectParser" should "parse simple json correctly" in {
+  "JSONParserV2: JObjectParser" should "parse simple json correctly" in {
     import parsers._
 
-    val propName = "name1".quoted
-    val json = s"{$propName:1}"
-
-//    val json =
-//      """
-//        |{
-//        |"name1":1
-//        |}
-//        |""".stripMargin
+    val json =
+      """
+        |{
+        |"name1":1
+        |}
+        |""".stripMargin.replace("\n", "")
 
     val value1 = JObjectParser.run(json)
     value1 shouldEqual Success(JObject(Map("name1" -> JNumber(1))), json.length)
+  }
+
+  "JSONParserV2: JObjectParser" should "parse json with array correctly" in {
+    import parsers._
+    val json =
+      """
+        |{
+        |"name1":1,
+        |"name2":[true,false,true],
+        |"name3":"aaa"
+        |}
+        |""".stripMargin.replace("\n", "")
+
+    JObjectParser.run(json) shouldEqual Success(
+      get = JObject(Map(
+        "name1" -> JNumber(1),
+        "name2" -> JArray(IndexedSeq(JBool(true), JBool(false), JBool(true))),
+        "name3" -> JString("aaa")
+      )),
+      charsConsumed = json.length
+    )
+
   }
 
 

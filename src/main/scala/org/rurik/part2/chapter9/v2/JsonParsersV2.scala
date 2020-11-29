@@ -50,6 +50,9 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
 
   def scope[A](msg: String)(p: JsonParser[A]): JsonParser[A] = loc => p(loc).mapError(_.push(loc, msg))
 
+
+  def lineBreak: JsonParser[String] = regex("^\\n".r)
+
   def flatMap[A, B](f: JsonParser[A])(g: A => JsonParser[B]): JsonParser[B] = scope(s"flatMap f=${f.toString()}") {
     loc =>
       f(loc) match {
@@ -66,7 +69,9 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
       }
   }
 
-  def run[A](p: JsonParser[A])(input: String): Result[A] = p(Location(input))
+  def run[A](p: JsonParser[A])(input: String): Result[A] = {
+    p(Location(input))
+  }
 
 
   def succeed[A](a: A): JsonParser[A] = scope("succeed") {
@@ -94,11 +99,11 @@ class JsonParsersV2 extends ParsersV2[JsonParser] {
   )
 
   def JArrayParser: JsonParser[JSON] = scope("JArrayParser")(
-    ("[" *> (literal sep ",") <* "]").map(list => JArray(list.toIndexedSeq))
+    ("[" *> (allParsers sep ",") <* "]").map(list => JArray(list.toIndexedSeq))
   )
 
   def JObjectProp: JsonParser[(String, JSON)] = scope("JObjectProp")(
-    (AnyString <* ":") ** literal
+    (AnyString <* ":") ** allParsers
   )
 
   def JObjectParser: JsonParser[JObject] = scope("JObject")(
