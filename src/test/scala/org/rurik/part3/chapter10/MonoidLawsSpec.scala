@@ -16,21 +16,13 @@ class MonoidLawsSpec extends AnyFlatSpec with Checkers with should.Matchers {
     val boolGen = Gen.oneOf(true, false)
     val optionGen: Gen[Option[Int]] = intGen.map((i: Int) => if (i > 0) Some(i) else None)
     val posIntGen = Gen.chooseNum(0, 1000)
-    val endoFnGen: Gen[Int => Int] = posIntGen.map(a => (i: Int) => i + a)
 
     check(monoidLaws(intAddition, intGen))
     check(monoidLaws(intMultiplication, intGen))
     check(monoidLaws(booleanAnd, boolGen))
     check(monoidLaws(optionMonoid[Int], optionGen))
 
-    check {
-      forAll(endoFnGen, endoFnGen, endoFnGen) {
-        case (xFn, yFn, zFn) =>
-          associativeLawFn[Int](endoMonoid[Int], xFn, yFn, zFn, posIntGen)
-          identityLawFn[Int](endoMonoid[Int],xFn,posIntGen)
-      }
-    }
-
+    check(monoidLawsFn[Int](endoMonoid[Int], posIntGen, a => (i: Int) => i + a))
 
   }
 

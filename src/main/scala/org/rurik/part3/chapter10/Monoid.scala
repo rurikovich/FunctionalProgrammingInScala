@@ -1,5 +1,6 @@
 package org.rurik.part3.chapter10
 
+import org.rurik.part3.chapter10.Monoids.endoMonoid
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop}
 
@@ -40,6 +41,17 @@ object Monoid {
       identityLaw(m, gen) &&
         associativeLaw(m, gen)
 
+
+    def monoidLawsFn[A](m: Monoid[A => A], gen: Gen[A], fnMap: A => A => A): Prop = {
+      val fnGen = gen.map(fnMap)
+      forAll(fnGen, fnGen, fnGen) {
+        case (xFn, yFn, zFn) =>
+          associativeLawFn[A](m, xFn, yFn, zFn, gen) &&
+            identityLawFn[A](m, xFn, gen)
+      }
+    }
+
   }
+
 
 }
