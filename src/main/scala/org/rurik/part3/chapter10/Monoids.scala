@@ -32,6 +32,12 @@ object Monoids {
     override def zero: Option[A] = None
   }
 
+  // We can get the dual of any monoid just by flipping the `op`.
+  def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
+    def op(x: A, y: A): A = m.op(y, x)
+    val zero = m.zero
+  }
+
   def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A] {
 
     override def op(a1: A => A, a2: A => A): A => A = a1 compose  a2

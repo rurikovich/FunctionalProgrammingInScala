@@ -1,6 +1,6 @@
 package org.rurik.part3.chapter10
 
-import org.rurik.part3.chapter10.Monoids.endoMonoid
+import org.rurik.part3.chapter10.Monoids._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop}
 
@@ -52,6 +52,26 @@ object Monoid {
     }
 
   }
+
+  def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    as.map(f).foldLeft(m.zero)(m.op)
+
+
+  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+    foldMap(as, endoMonoid[B])(f.curried)(z)
+
+  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
+    foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(z)
+
+  def foldMapV[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+    val s: Int = v.size
+    val b1 = foldMapV(v.slice(0, s / 2), m)(f)
+    val b2 = foldMapV(v.slice(s / 2, s), m)(f)
+    m.op(b1, b2)
+  }
+
+  def isOrderedByFoldmap(seq: IndexedSeq[Int]):Boolean=
+    foldMap(seq.toList,)()
 
 
 }
