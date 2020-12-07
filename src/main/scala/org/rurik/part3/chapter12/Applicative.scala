@@ -3,14 +3,42 @@ package org.rurik.part3.chapter12
 import org.rurik.part3.chapter11.Functor
 
 trait Applicative[F[_]] extends Functor[F] {
+
   // primitive combinators
-  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
+  def apply[A, B](fab: F[A => B])(fa: F[A]): F[B]
 
   def unit[A](a: => A): F[A]
 
   // derived combinators
-  def map[A, B](fa: F[A])(f: A => B): F[B] =
-    map2(fa, unit(()))((a, _) => f(a))
+  def map[A, B](fa: F[A])(f: A => B): F[B] = apply[A, B](unit(f))(fa)
+
+  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = {
+    val fABC: F[A => B => C] = unit(f.curried)
+    val fBC: F[B => C] = apply(fABC)(fa)
+    apply(fBC)(fb)
+  }
+
+  def map3[A, B, C, D](fa: F[A],
+                       fb: F[B],
+                       fc: F[C])(f: (A, B, C) => D): F[D] = {
+    val fnABCD: A => B => C => D = f.curried
+    val fBCD: F[B => C => D] = map(fa)(fnABCD)
+    val fCD: F[C => D] = apply(fBCD)(fb)
+    apply(fCD)(fc)
+  }
+
+
+  def map4[A, B, C, D, E](fa: F[A],
+                          fb: F[B],
+                          fc: F[C],
+                          fd: F[D])(f: (A, B, C, D) => E): F[E] = {
+    val fnABCDE: A => B => C => D => E = f.curried
+    val fBCDE: F[B => C => D => E] = map(fa)(fnABCDE)
+    val fCDE: F[C => D => E] = apply(fBCDE)(fb)
+    val fDE: F[D => E] = apply(fCDE)(fc)
+    apply(fDE)(fd)
+  }
+
 
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldRight(unit(List[B]()))((a, fbs) => map2(f(a), fbs)(_ :: _))
