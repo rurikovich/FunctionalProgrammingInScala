@@ -3,6 +3,7 @@ package org.rurik.part3.chapter12
 import org.rurik.part3.chapter11.Functor
 
 trait Applicative[F[_]] extends Functor[F] {
+  self =>
 
   // primitive combinators
   def apply[A, B](fab: F[A => B])(fa: F[A]): F[B]
@@ -54,6 +55,37 @@ trait Applicative[F[_]] extends Functor[F] {
   def replicateM[A](n: Int, ma: F[A]): F[List[A]] = traverse((0 to n).toList)(_ => ma)
 
   def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
+
+  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] =
+    new Applicative[({type f[x] = (F[x], G[x])})#f] {
+      override def apply[A, B](fab: (F[A => B], G[A => B]))(fa: (F[A], G[A])): (F[B], G[B]) =
+        (self.apply(fab._1)(fa._1), G.apply(fab._2)(fa._2))
+
+      override def unit[A](a: => A): (F[A], G[A]) = (self.unit(a), G.unit(a))
+    }
+
+
+  def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = new Applicative[({type f[x] = F[G[x]]})#f] {
+
+    override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+
+    override def apply[A, B](fab: F[G[A => B]])(fa: F[G[A]]): F[G[B]] = self.map2(fab, fa) {
+      (gAB: G[A => B], gA: G[A]) =>
+        G.map2(gAB, gA) { (ab: A => B, a: A) => ab(a) }
+    }
+
+  }
+
+
+  def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] = {
+    ofa.foldLeft(unit(Map.empty[K, V])) {
+      (accMap: F[Map[K, V]], kv: (K, F[V])) =>
+        map2(accMap, kv._2) {
+          (m: Map[K, V], v: V) =>
+            m + (kv._1 -> v)
+        }
+    }
+  }
 
 }
 
