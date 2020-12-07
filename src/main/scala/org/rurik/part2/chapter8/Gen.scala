@@ -1,7 +1,7 @@
 package org.rurik.part2.chapter8
 
-import org.rurik.part1.part1_6.RNG.{Rand, int}
-import org.rurik.part1.part1_6.{RNG, SimpleRNG, State}
+import org.rurik.part1.part1_6.RNG.Rand
+import org.rurik.part1.part1_6.{RNG, State}
 
 case class Gen[A](sample: State[RNG, A]) {
 

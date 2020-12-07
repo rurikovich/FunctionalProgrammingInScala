@@ -29,3 +29,33 @@ trait Applicative[F[_]] extends Functor[F] {
   def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
 
 }
+
+object Applicative {
+
+
+  def validationApplicative[E]: Applicative[({type f[x] = Validation[E, x]})#f] = new Applicative[({type f[x] = Validation[E, x]})#f] {
+
+    override def unit[A](a: => A): Validation[E, A] = Success(a)
+
+    override def map2[A, B, C](fa: Validation[E, A], fb: Validation[E, B])(f: (A, B) => C): Validation[E, C] = {
+      (fa, fb) match {
+        case (faS: Success[A], fbS: Success[B]) => Success(f(faS.a, fbS.a))
+
+        case (faF: Failure[E], _: Success[B]) => faF
+
+        case (_: Success[A], fbF: Failure[E]) => fbF
+
+        case (faF: Failure[E], fbF: Failure[E]) =>
+          Failure[E](
+            head = faF.head,
+            tail = faF.tail ++ Vector(fbF.head) ++ fbF.tail
+          )
+
+      }
+
+
+    }
+
+  }
+
+}

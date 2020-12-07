@@ -70,8 +70,6 @@ object Monoid {
     m.op(b1, b2)
   }
 
-  def isOrderedByFoldmap(seq: IndexedSeq[Int]):Boolean=
-    foldMap(seq.toList,)()
 
 
 }

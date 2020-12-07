@@ -2,6 +2,7 @@ package org.rurik.part3.chapter11
 
 import org.rurik.part1.part1_4.{Option, Some}
 import org.rurik.part1.part1_5
+import org.rurik.part1.part1_6.State
 import org.rurik.part2.chapter7.Par
 import org.rurik.part2.chapter7.Par.Par
 import org.rurik.part2.chapter8.Gen
@@ -24,13 +25,7 @@ trait Monad[F[_]] extends Functor[F] {
     }
   }
 
-  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] = {
-    val acc: F[List[B]] = unit(List.empty[B])
-    la.foldLeft(acc) {
-      (mLIst: F[List[B]], a: A) =>
-        map2(mLIst, f(a))(_ ++ List(_))
-    }
-  }
+  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] = sequence(la.map(f))
 
   def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
     traverse((0 to n).toList)(_ => ma)
@@ -58,9 +53,12 @@ trait Monad[F[_]] extends Functor[F] {
         }
       }
     }
-
-
   }
+
+
+  def join[A](mma: F[F[A]]): F[A] = flatMap(mma)((fa: F[A]) => fa)
+
+  def flatMapJ[A, B](ma: F[A])(f: A => F[B]): F[B] = join(map(ma)(f))
 
 
   trait Laws {
@@ -71,14 +69,17 @@ trait Monad[F[_]] extends Functor[F] {
     def x: F[A]
 
 
-    compose(f, unit[A]) == f
+    val unitFn: A => F[A] = (a: A) => unit[A](a)
+
+    compose(f, unitFn) == f
 
     (a: A) => {
       val xx: F[A] = f(a)
-      flatMap(xx)(unit[A]) == f
+
+      flatMap(xx)(unitFn) == f
     }
 
-    flatMap(x)(unit[A]) == x
+    flatMap(x)(unitFn) == x
 
 
   }
@@ -116,13 +117,52 @@ object Monad {
   }
 
   val listMonad = new Monad[List] {
-    override def unit[A](a: => A): List[A] = List.empty
+    override def unit[A](a: => A): List[A] = List(a)
 
     override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma.flatMap(f)
   }
 
 
-  val idLaw = optionMonad.flatMap(Some(1))(optionMonad.unit) == Some(1)
+  def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
+    def unit[A](a: => A): State[S, A] = State(s => (a, s))
 
+    def flatMap[A, B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
+      st flatMap f
+  }
+
+
+  def unitOptFn[A]: A => Option[A] = (a: A) => optionMonad.unit(a)
+
+  val idLaw = optionMonad.flatMap(Some(1))(unitOptFn[Int]) == Some(1)
+
+
+  def getState[S]: State[S, S] = State(s => (s, s))
+
+  def setState[S](s: S): State[S, Unit] = State(_ => ((), s))
+
+  val F = stateMonad[Int]
+
+  def zipWithIndex[A](as: List[A]): List[(Int, A)] = {
+    val startAcc: State[Int, List[(Int, A)]] = F.unit(List[(Int, A)]())
+
+    val state: State[Int, List[(Int, A)]] =
+      as.foldLeft(startAcc) {
+        (acc, a) =>
+          for {
+            xs <- acc
+            n <- getState
+            _ <- setState(n + 1)
+          } yield (n, a) :: xs
+      }
+    state.run(0)._1.reverse
+
+  }
+
+
+  def eitherMonad[E]: Monad[({type f[x] = Either[E, x]})#f] = new Monad[({type f[x] = Either[E, x]})#f] {
+    override def unit[A](a: => A): Either[E, A] = Right(a)
+
+    override def flatMap[A, B](ma: Either[E, A])(f: A => Either[E, B]): Either[E, B] = ma.flatMap(f)
+  }
 
 }
