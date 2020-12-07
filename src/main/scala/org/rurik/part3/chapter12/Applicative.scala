@@ -51,7 +51,6 @@ trait Applicative[F[_]] extends Functor[F] {
     }
   }
 
-
   def replicateM[A](n: Int, ma: F[A]): F[List[A]] = traverse((0 to n).toList)(_ => ma)
 
   def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
@@ -78,11 +77,24 @@ object Applicative {
             head = faF.head,
             tail = faF.tail ++ Vector(fbF.head) ++ fbF.tail
           )
+      }
+    }
 
+    override def apply[A, B](fab: Validation[E, A => B])(fa: Validation[E, A]): Validation[E, B] =
+      (fab, fa) match {
+        case (fabS: Success[A => B], faS: Success[A]) => Success(fabS.a(faS.a))
+
+        case (fabF: Failure[E], _: Success[A]) => fabF
+
+        case (_: Success[A => B], faF: Failure[E]) => faF
+
+        case (fabF: Failure[E], faF: Failure[E]) =>
+          Failure[E](
+            head = fabF.head,
+            tail = fabF.tail ++ Vector(faF.head) ++ faF.tail
+          )
       }
 
-
-    }
 
   }
 
