@@ -1,70 +1,53 @@
 package org.rurik.part3.chapter12
 
 import org.rurik.part3.chapter10.{Foldable, Monoid}
-import org.rurik.part3.chapter11.Functor
+import org.rurik.part3.chapter11.{Functor, Monad}
 
 trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
-  def traverse[G[_] : Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
-    sequence(map(fa)(f))
+  def traverse[G[_] : Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]]
 
   def sequence[G[_] : Applicative, A](fga: F[G[A]]): G[F[A]] =
     traverse(fga)(ga => ga)
+
+  type Id[A] = A
+
+  val idMonad = new Monad[Id] {
+    def unit[A](a: => A) = a
+
+    override def flatMap[A, B](a: A)(f: A => B): B = f(a)
+  }
+
+  def map[A, B](fa: F[A])(f: A => B): F[B] =
+    traverse[Id, A, B](fa)(f)(idMonad)
+
+  import Applicative._
+
+  override def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
+    traverse[({type f[x] = Const[B, x]})#f, A, Nothing](as)(f)(monoidApplicative(mb))
 
 }
 
 object Traverse {
 
-  def listTraverse: Traverse[List] = new Traverse[List] {
-    override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
-
-    override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
-
-    override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B = as.foldRight(mb.zero)((a, b) => mb.op(f(a), b))
-
-    override def map[A, B](fa: List[A])(f: A => B): List[B] = fa.map(f)
+  val listTraverse = new Traverse[List] {
+    override def traverse[M[_], A, B](as: List[A])(f: A => M[B])(implicit M: Applicative[M]): M[List[B]] =
+      as.foldRight(M.unit(List[B]()))((a, fbs) => M.map2(f(a), fbs)(_ :: _))
   }
 
-
-  def optionTraverse: Traverse[Option] = new Traverse[Option] {
-    override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B = as.foldRight(z)(f)
-
-    override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B): B = as.foldLeft(z)(f)
-
-    override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B = as.foldRight(mb.zero)((a, b) => mb.op(f(a), b))
-
-    override def map[A, B](fa: Option[A])(f: A => B): Option[B] = fa.map(f)
+  val optionTraverse = new Traverse[Option] {
+    override def traverse[M[_], A, B](oa: Option[A])(f: A => M[B])(implicit M: Applicative[M]): M[Option[B]] =
+      oa match {
+        case Some(a) => M.map(f(a))(Some(_))
+        case None => M.unit(None)
+      }
   }
 
   case class Tree[+A](head: A, tail: List[Tree[A]])
 
-  def treeTraverse: Traverse[Tree] = new Traverse[Tree] {
-
-    override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B =
-      (as.head, as.tail) match {
-        case (h, Nil) => f(h, z)
-        case (h: A, t: List[Tree[A]]) =>
-          t.foldRight(f(h, z)) {
-            (tree: Tree[A], acc: B) =>
-              foldRight(tree)(acc)(f)
-          }
-      }
-
-
-    override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B): B = (as.head, as.tail) match {
-      case (h, Nil) => f(z, h)
-      case (h: A, t: List[Tree[A]]) =>
-        t.foldLeft(f(z, h)) {
-          (acc: B, tree: Tree[A]) =>
-            foldLeft(tree)(acc)(f)
-        }
-    }
-
-    override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
-      foldRight(as)(mb.zero)((a, b) => mb.op(f(a), b))
-
-    override def map[A, B](fa: Tree[A])(f: A => B): Tree[B] =
-      fa.copy(f(fa.head), fa.tail.map(t => map(t)(f)))
+  val treeTraverse = new Traverse[Tree] {
+    override def traverse[M[_], A, B](ta: Tree[A])(f: A => M[B])(implicit M: Applicative[M]): M[Tree[B]] =
+      M.map2(f(ta.head), listTraverse.traverse(ta.tail)(a => traverse(a)(f)))(Tree(_, _))
   }
 
 
