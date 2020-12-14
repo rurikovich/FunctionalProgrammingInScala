@@ -1,15 +1,16 @@
 package org.rurik.part2.chapter9.v2
 
+import org.rurik.part2.chapter9.helpers.StrHelper._
 import org.rurik.part2.chapter9.json.JSON
 import org.rurik.part2.chapter9.json.JSON._
 import org.rurik.part2.chapter9.v2.JsonParsersV2.JsonParser
-import org.rurik.part2.chapter9.v2.parsers.{Location, Success}
+import org.rurik.part2.chapter9.v2.StrExt.strToStrExt
+import org.rurik.part2.chapter9.v2.parsers.Success
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import org.scalatestplus.scalacheck.Checkers
-import org.rurik.part2.chapter9.helpers.StrHelper._
 
 
 class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
@@ -122,9 +123,9 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
     val json =
       """
         |{
-        |"name1":1
+        |"name1":1.0
         |}
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     val value1 = JObjectParser.run(json)
     value1 shouldEqual Success(JObject(Map("name1" -> JNumber(1))), json.length)
@@ -139,7 +140,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
         |"name2":[true,false,true],
         |"name3":"aaa"
         |}
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     JObjectParser.run(json) shouldEqual Success(
       get = JObject(Map(
@@ -164,7 +165,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
         |},
         |"name3":"aaa"
         |}
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     val parseResult = JObjectParser.run(json)
 
@@ -196,7 +197,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
         |},
         |"name3":"aaa"
         |}
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     val parseResult = JObjectParser.run(json)
     parseResult shouldEqual Success(
@@ -228,7 +229,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
         |"name3":3
         |}
         |]
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     val parseResult = JArrayParser.run(json)
     parseResult shouldEqual Success(
@@ -248,7 +249,7 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
       """
         |{
         |}
-        |""".stripMargin.replace("\n", "")
+        |""".stripMargin.toFlatStrJson
 
     val parseResult = JObjectParser.run(json)
     parseResult shouldEqual Success(JObject(Map.empty), json.length)
@@ -259,5 +260,17 @@ class JSONParserV2Spec extends AnyFlatSpec with Checkers with should.Matchers {
     val json = "[]"
     JArrayParser.run(json) shouldEqual Success(JArray(IndexedSeq.empty), json.length)
   }
+
+
+}
+
+
+case class StrExt(json: String) {
+  def toFlatStrJson: String = json.replace("\n", "").replace("\r", "")
+}
+
+object StrExt {
+
+  implicit def strToStrExt(str: String): StrExt = StrExt(str)
 
 }
