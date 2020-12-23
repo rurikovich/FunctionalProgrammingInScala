@@ -1,54 +1,108 @@
 package org.rurik.part4.chapter15
 
-import scala.collection.immutable.LazyList.#::
+import cats.effect.IO
+import org.rurik.part3.chapter11.Monad
+import org.rurik.part4.chapter15.Process.Try
 
-sealed trait Process[I, O] {
+trait Process[F[_], O] {
 
-  def apply(s: LazyList[I]): LazyList[O] = this match {
-    case Halt() => LazyList()
-    case Await(recv) => s match {
-      case h #:: t => recv(Some(h))(t)
-      case xs => recv(None)(xs)
-    }
-    case Emit(h, t) => h #:: t(s)
+  def onHalt(f: Throwable => Process[F, O]): Process[F, O] = this match {
+    case Halt(e) => Try(f(e))
+    case Emit(h, t) => Emit(h, t.onHalt(f))
+    case Await(req, recv) => Await(req, recv andThen (_.onHalt(f)))
   }
 
-  def repeat: Process[I, O] = {
-    def go(p: Process[I, O]): Process[I, O] = p match {
-      case Halt() => go(this)
-      case Await(recv) => Await {
-        case None => recv(None)
-        case i => go(recv(i))
-      }
-      case Emit(h, t) => Emit(h, go(t))
+  def ++(p: => Process[F, O]): Process[F, O] =
+    this.onHalt {
+      case End => p
+      case err => Halt(err)
     }
 
-    go(this)
-  }
+  def flatMap[O2](f: O => Process[F, O2]): Process[F, O2] =
+    this match {
+      case Halt(err) => Halt(err)
+      case Emit(o, t) => Try(f(o)) ++ t.flatMap(f)
+      case Await(req, recv) =>
+        Await(req, recv andThen (_ flatMap f))
+    }
 
+  def runLog(implicit F: MonadCatch[F]): F[IndexedSeq[O]]={
+
+
+  }
 
 }
 
-case class Emit[I, O](head: O, tail: Process[I, O] = Halt[I, O]()) extends Process[I, O]
+trait MonadCatch[F[_]] extends Monad[F] {
+  def attempt[A](a: F[A]): F[Either[Throwable,A]]
+  def fail[A](t: Throwable): F[A]
+}
 
-case class Await[I, O](recv: Option[I] => Process[I, O]) extends Process[I, O]
+case class Await[F[_], A, O](req: F[A],
+                             recv: Either[Throwable, A] => Process[F, O]
+                            ) extends Process[F, O]
 
-case class Halt[I, O]() extends Process[I, O]
+case class Emit[F[_], O](head: O,
+                         tail: Process[F, O]
+                        ) extends Process[F, O]
 
+case class Halt[F[_], O](err: Throwable) extends Process[F, O]
+
+case object End extends Exception
+
+case object Kill extends Exception
 
 object Process {
-  def liftOne[I, O](f: I => O): Process[I, O] =
-    Await {
-      case Some(i) => Emit(f(i))
-      case None => Halt()
+
+  def Try[F[_], O](p: => Process[F, O]): Process[F, O] =
+    try p catch {
+      case e: Throwable => Halt(e)
     }
 
-  def lift[I, O](f: I => O): Process[I, O] = liftOne(f).repeat
+  def await[F[_], A, O](req: F[A])(recv: Either[Throwable, A] => Process[F, O]): Process[F, O] =
+    Await(req, recv)
 
-  def filter[I](p: I => Boolean): Process[I, I] =
-    Await[I, I] {
-      case Some(i) if p(i) => Emit(i)
-      case _ => Halt()
-    }.repeat
+
+  def runLog[O](src: Process[IO, O]): IO[IndexedSeq[O]] = IO {
+    val E = java.util.concurrent.Executors.newFixedThreadPool(4)
+
+    @annotation.tailrec
+    def go(cur: Process[IO, O], acc: IndexedSeq[O]): IndexedSeq[O] =
+      cur match {
+        case Emit(h, t) => go(t, acc :+ h)
+        case Halt(End) => acc
+        case Halt(err) => throw err
+        case Await(req, recv) =>
+
+          val next =
+            try recv(Right(
+              req.unsafeRunSync())
+            )
+            catch {
+              case err: Throwable => recv(Left(err))
+            }
+          go(next, acc)
+      }
+
+    try go(src, IndexedSeq())
+    finally E.shutdown
+  }
+
+
+  import java.io.{BufferedReader, FileReader}
+
+  val p: Process[IO, String] =
+    await(IO(new BufferedReader(new FileReader("lines.txt")))) {
+      case Right(b) =>
+        lazy val next: Process[IO, String] = await(IO(b.readLine)) {
+          case Left(e) => await(IO(b.close))(_ => Halt(e))
+          case Right(line) =>
+            if (line eq null) Halt(End)
+            else Emit(line, next)
+        }
+        next
+      case Left(e) => Halt(e)
+    }
+
 
 }

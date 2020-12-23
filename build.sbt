@@ -9,6 +9,8 @@ libraryDependencies += "org.scalactic" %% "scalactic" % scalaTestVersion
 libraryDependencies += "org.scalatest" %% "scalatest" % scalaTestVersion % Test
 
 
+libraryDependencies += "org.typelevel" %% "cats-effect" % "2.3.1"
+
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.15.1" % Test
 
 // https://mvnrepository.com/artifact/org.scalatestplus/scalacheck-1-15
