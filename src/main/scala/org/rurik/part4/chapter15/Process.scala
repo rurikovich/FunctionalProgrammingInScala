@@ -26,15 +26,29 @@ trait Process[F[_], O] {
         Await(req, recv andThen (_ flatMap f))
     }
 
-  def runLog(implicit F: MonadCatch[F]): F[IndexedSeq[O]]={
+  def runLog[A](implicit MC: MonadCatch[F]): F[IndexedSeq[O]] = {
+    type recvType = Either[Throwable, A] => Process[F, O]
 
+    def go(cur: Process[F, O], acc: IndexedSeq[O]): F[IndexedSeq[O]] =
+      cur match {
+        case Emit(h, t) => go(t, acc :+ h)
+        case Halt(End) => MC.unit(acc)
+        case Halt(err) => MC.fail(err)
+        case Await(req: F[A], recv: recvType) => MC.flatMap(MC.attempt[A](req)) {
+          e: Either[Throwable, A] =>
+            go(Try(recv(e)), acc)
+        }
+      }
+
+    go(this, IndexedSeq())
 
   }
 
 }
 
 trait MonadCatch[F[_]] extends Monad[F] {
-  def attempt[A](a: F[A]): F[Either[Throwable,A]]
+  def attempt[A](a: F[A]): F[Either[Throwable, A]]
+
   def fail[A](t: Throwable): F[A]
 }
 
@@ -74,7 +88,7 @@ object Process {
         case Halt(err) => throw err
         case Await(req, recv) =>
 
-          val next =
+          val next: Process[IO, O] =
             try recv(Right(
               req.unsafeRunSync())
             )
